@@ -1,0 +1,253 @@
+body {
+  background-color: lightgray;
+}
+
+#game {
+  position: relative;
+  background-color: black;
+  margin: 10px;
+  box-shadow: 0px 0px 30px 2px grey;
+  border-radius: 10px;
+}
+
+#chatButton {
+  transform: rotate(-90deg);
+  position: absolute;
+  width: 150px;
+  height: 40px;
+  left: -50px;
+  top: 200px;
+}
+
+#left {
+  position: relative;
+  text-align: right;
+}
+
+#right {
+  /* position: relative; */
+  text-align: left;
+}
+
+.heart {
+  image-rendering: pixelated;
+  display: none;
+}
+
+.anim {
+  animation-name: gameover;
+  animation-duration: 2s;
+}
+
+@keyframes gameover {
+  0% {
+    background-color: red;
+  }
+  100% {
+    background-color: black;
+  }
+}
+
+image {
+  image-rendering: pixelated;
+}
+
+audio {
+  display: none;
+}
+
+table {
+  /* display: block; */
+  width: 100%;
+}
+
+td {
+  text-align: center;
+  vertical-align: top;
+}
+
+.header {
+  font-family: "Lucida Console", Monaco, monospace;
+  color: deeppink;
+  font-size: 300%;
+  text-shadow: 2px 2px 3px gray;
+  text-align: center;
+  font-weight: bolder;
+}
+
+#connected {
+  font-size: large;
+  font-family: 'Consolas', 'Courier New', Courier, monospace;
+}
+
+a {
+  color: whitesmoke;
+  width: 100%;
+  height: 100%;
+}
+
+/* #region circleButton*/
+
+.circleButton {
+  vertical-align: middle;
+  border: 0px;
+  outline: none;
+  border-radius: 5px;
+  background-color: orange;
+  position: relative;
+  width: 300px;
+  height: 150px;
+  text-align: center;
+  font-size: 100%;
+  font-family: 'Consolas', 'Courier New', Courier, monospace;
+  box-shadow: 0px 0px 30px 2px grey;
+  transition-duration: 0.5s;
+  margin: 10px;
+  padding: 10px;
+}
+
+.circleButton:hover {
+  /* background-color: blueviolet; */
+  transition-duration: 0.2s;
+  box-shadow: 0px 0px 30px 5px grey;
+}
+
+.circleCanvas {
+  border-radius: 5px;
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  width: 100%;
+  height: 100%;
+}
+
+.circleButton:active .circleCanvas {
+  background-color: rgba(0, 0, 0, 0.1);
+  /* transition-delay: 0.2s; */
+  transition-duration: 2s;
+}
+
+/* #endregion */
+
+/* #region dropdown*/
+
+.circleDropdown {
+  z-index: 1;
+  border: 0px;
+  outline: none;
+  background-color: orange;
+  border-radius: 5px;
+  position: relative;
+  width: 300px;
+  height: 20px;
+  text-align: center;
+  font-size: 100%;
+  font-family: 'Consolas', 'Courier New', Courier, monospace;
+  box-shadow: 0px 0px 30px 2px grey;
+  transition-duration: 1s;
+  margin: 10px;
+  list-style-type: none;
+  cursor: default;
+  /* padding: 10px; */
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.circleDropdown:hover .dropdownul {
+  box-shadow: 0px 10px 30px 5px grey;
+}
+
+.circleDropdown:hover .dropdownul li {
+  visibility: visible;
+  opacity: 1;
+  max-height: 500px;
+  padding: 10px;
+  transition: 0.5s;
+}
+
+.dropdownul {
+  width: 100%;
+  list-style-type: none;
+  padding-left: 0px;
+  margin-top: 11px;
+}
+
+.dropdownul li {
+  /* margin: 5px; */
+  visibility: hidden;
+  opacity: 0;
+  max-height: 0px;
+  transition-duration: 0.5s;
+  cursor: pointer;
+  background-color: violet;
+}
+
+.dropdownul li:hover {
+  background-color: steelblue;
+  transition-duration: 0.5s;
+}
+
+/* #endregion */
+
+/* #region dropdownClick*/
+
+/* #region textfield*/
+
+.textField {
+  background-color: whitesmoke;
+  border-style: solid;
+  border-width: 0px;
+  outline: none;
+  box-shadow: 0px 0px 30px 2px grey;
+  width: 400px;
+  height: 50px;
+  padding: 10px;
+  margin: 10px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: x-large;
+  border-radius: 10px;
+  transition-duration: 0.5s;
+}
+
+.textField:focus {
+  padding: 7px;
+  border-radius: 10px;
+  border-style: solid;
+  border-width: 3px;
+  border-color: green;
+  transition-duration: 0.2s;
+}
+
+/* #endregion */
+
+.textArea {
+  border: 0px;
+  outline: none;
+  border-radius: 5px;
+  background-color: lightcoral;
+  position: relative;
+  width: 300px;
+  height: 150px;
+  text-align: initial;
+  font-size: large;
+  font-family: 'Consolas', 'Courier New', Courier, monospace;
+  font-weight: bold;
+  box-shadow: 0px 0px 30px 2px grey;
+  transition-duration: 0.5s;
+  margin: 10px;
+  padding: 10px;
+  resize: none;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: silver;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-track-piece {
+  background-color: palegoldenrod;
+}
+
+::-webkit-scrollbar {
+  background-color: transparent;
+}

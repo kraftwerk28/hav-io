@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<!-- <html lang="en"> -->
+
+<head>
+  <link rel="stylesheet" href="./st.css">
+  <!-- <meta charset="UTF-8"> -->
+  <!-- <meta name="viewport" content="width=device-width, initial-scale=1.0"> -->
+  <!-- <meta http-equiv="X-UA-Compatible" content="ie=edge"> -->
+  <title>havio</title>
+</head>
+
+<body>
+  <div id="kills" class="header" style="float: left; color: limegreen; font-size: xx-large">kills:</div>
+  <div id="deaths" class="header" style="float: right; color: tomato; font-size: xx-large">deaths:</div>
+  <div class="header">hav-io</div>
+  <table>
+    <tr>
+      <td id="left">
+        <div id="heartContainer" style="position: relative; top: 0px; pointer-events: none">
+          <img class="heart" src="./img/heart.png" width="50" height="50">
+          <img class="heart" src="./img/heart.png" width="50" height="50">
+          <img class="heart" src="./img/heart.png" width="50" height="50">
+        </div>
+        <textarea id="chatField" class="textArea" style="width: 90%; max-height: 100%;" readonly></textarea>
+        <input id="chatInput" type="text" class="textField" style="width: 90%; height: 30px" placeholder="type here...">
+      </td>
+      <td>
+        <canvas id="game"></canvas>
+      </td>
+      <td id="right">
+        <input id="nickname" type="text" maxlength="15" style="height: 30px; width: 290px;" class="textField" placeholder="your nickname">
+        <br>
+        <button class="circleButton" style="width: 230px; height: 50px;" onclick="reload()">
+          Restart
+          <canvas class="circleCanvas"></canvas>
+        </button>
+        <button id="mute" class="circleButton" style="width: 50px; height: 50px; background-size: contain" onclick="mute()">
+          <canvas class="circleCanvas"></canvas>
+        </button>
+        <br>
+        <textarea class="textArea" style="width: 290px; height: 150px" readonly>
+left click: shoot
+right click: accelerate
+
+kill players to be coolest
+gl)
+        </textarea>
+        <div class="textArea" style="width: 290px; height: 150px; background-color: palegreen">
+          <div style="text-align: center; font-weight: bolder;">CONNECTED:</div>
+          <div id="connected" style="height: 90%; white-space: pre; overflow-y: scroll"></div>
+        </div>
+      </td>
+    </tr>
+  </table>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.4/socket.io.js"></script>
+  <script src="./game.js"></script>
+  <script src="./style28.js"></script>
+
+</body>
+
+</html>
