@@ -8,6 +8,8 @@ body {
   margin: 10px;
   box-shadow: 0px 0px 30px 2px grey;
   border-radius: 10px;
+  cursor: crosshair;
+  animation-duration: 2s;
 }
 
 #chatButton {
@@ -34,14 +36,45 @@ body {
   display: none;
 }
 
-.anim {
+.animgameover {
   animation-name: gameover;
-  animation-duration: 2s;
+}
+
+.animhit {
+  animation-name: hit;
+}
+
+.animheal {
+  animation-name: heal;
 }
 
 @keyframes gameover {
   0% {
     background-color: red;
+  }
+  25% {
+    background-color: black;
+  }
+  50% {
+    background-color: red;
+  }
+  100% {
+    background-color: black;
+  }
+}
+
+@keyframes hit {
+  0% {
+    background-color: red;
+  }
+  100% {
+    background-color: black;
+  }
+}
+
+@keyframes heal {
+  0% {
+    background-color: lime;
   }
   100% {
     background-color: black;
@@ -246,6 +279,7 @@ a {
 
 ::-webkit-scrollbar-track-piece {
   background-color: palegoldenrod;
+  border-radius: 10px;
 }
 
 ::-webkit-scrollbar {

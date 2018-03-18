@@ -8,6 +8,8 @@ let bulletClock;
 let kills = 0;
 let deaths = 0;
 let muted = false;
+let walls = [];
+let powerups = [];
 
 window.onload = () => {
   muteButton.style.backgroundImage = 'url(\'./img/Mute.png\')';
@@ -69,10 +71,11 @@ chatInput.onkeydown = (e) => {
 const canvas = document.getElementById('game');
 canvas.style.animationPlayState = 'paused';
 const ctx = canvas.getContext('2d');
+ctx.imageSmoothingEnabled = false;
 canvas.width = 700;
 canvas.height = 500;
 const canvOffset = canvas.getBoundingClientRect();
-ctx.fillStyle = 'lime';
+// ctx.fillStyle = 'lime';
 ctx.strokeStyle = 'yellow';
 ctx.font = '12px Consolas';
 ctx.textAlign = 'center';
@@ -116,8 +119,20 @@ canvas.onmouseup = (e) => {
 }
 //#endregion
 
+//#region images
+const wallimg = new Image();
+wallimg.src = './img/brick.png';
+// wallimg.style = 'image-rendering: pixelated';
+const shield_img = new Image();
+shield_img.src = './img/shield_powerup.png';
+const heart_img = new Image();
+heart_img.src = './img/heart_powerup.png';
+//#endregion
+
 socket.on('welcome', data => {
-  player = data;
+  player = data.player;
+  walls = data.walls;
+  powerups = data.powerups;
   updateHealth();
 });
 
@@ -129,13 +144,16 @@ socket.on('updatePlayer', data => {
   }
 });
 
+socket.on('updatePowerups', data => {
+  powerups = data;
+});
+
 socket.on('update', data => {
   ctx.clearRect(0, 0, 700, 500);
 
   data.players.forEach(p => {
     const x = Math.round(p.x);
     const y = Math.round(p.y);
-    const mygrad = ctx.createRadialGradient(x, y, 0, x, y, p.size * 3);
     const grad = ctx.createRadialGradient(x, y, 0, x, y, p.size * 4);
     grad.addColorStop(0, 'white');
     grad.addColorStop(1, 'transparent');
@@ -168,6 +186,7 @@ socket.on('update', data => {
     ctx.arc(x, y, player.size, 0, Math.PI * 2);
     ctx.fill();
     if (player.id === p.id) {
+      const mygrad = ctx.createRadialGradient(x, y, 0, x, y, player.size * 3);
       mygrad.addColorStop(0, ctx.fillStyle);
       mygrad.addColorStop(1, 'transparent');
       ctx.fillStyle = mygrad;
@@ -193,6 +212,57 @@ socket.on('update', data => {
       ctx.fill();
     }
   });
+
+  ctx.fillStyle = ctx.createPattern(wallimg, 'repeat');
+  walls.forEach(wall => {
+    // ctx.fillRect(50 * wall.x, 50 * wall.y, wall.w, wall.h);
+    ctx.drawImage(wallimg, 50 * wall.x, 50 * wall.y);
+    const x = wall.x * 50;
+    const y = wall.y * 50;    //collision
+    const s = player.speed;
+    if (player.x - player.size < x + wall.w && player.x + player.size > x &&
+      player.y + player.size > y && player.y - player.size < y + wall.h) {
+      if (player.y + player.size > y && player.y - player.size < y + wall.h) {
+        player.vector.x = -player.vector.x;
+        player.x += player.x - x < 0 ? -s - 1 : s + 1;
+      }
+
+      if (player.x + player.size > x && player.x - player.size < x + wall.w) {
+        player.vector.y = -player.vector.y;
+        player.y += player.y - y < 0 ? -s - 1 : s + 1;
+      }
+      // ctx.fillStyle = 'red'
+      // ctx.fillRect(wall.x, wall.y, wall.w, wall.h);
+      // ctx.fillStyle = ctx.createPattern(wallimg, 'repeat');
+      // player.vector.x = -player.vector.x;
+      socket.emit('updateMe', player);
+    }
+
+    for (let i = 0; i < player.bullets.length; i++) {
+      const b = player.bullets[i];
+      if (b.x - 2 < x + wall.w && b.x + 2 > x &&
+        b.y + 2 > y && b.y - 2 < y + wall.h) {
+        player.bullets.splice(i, 1);
+        socket.emit('updateMe', player);
+      }
+    }
+
+  });
+
+  powerups.forEach((pu, i) => {
+    const x = pu.x * 50;
+    const y = pu.y * 50;
+    const lowb = 15;
+    const topb = 35;
+    if (pu.type === 'shield')
+      ctx.drawImage(shield_img, x, y);
+    else if (pu.type === 'heart')
+      ctx.drawImage(heart_img, x, y);
+    if (player.x > x + lowb && player.x < x + topb && player.y > y + lowb && player.y < y + topb) {
+      powerups.splice(i, 1);
+      socket.emit('pickupPowerup', i);
+    }
+  });
 });
 
 socket.on('updateConnected', data => {
@@ -210,8 +280,10 @@ socket.on('updateConnected', data => {
 socket.on('gameOver', () => {
   sfx.die.play();
   deaths++;
-  canvas.classList.remove('anim');
-  setInterval(() => { canvas.classList.add('anim') }, 100);
+  canvas.classList.remove('animhit');
+  setTimeout(() => {
+    canvas.classList.add('animhit')
+  }, 100);
   canvas.style.animationPlayState = 'running';
   // setInterval(() => { canvas.style.animationPlayState = 'paused'; }, 3000);
   updatescore();
@@ -219,12 +291,31 @@ socket.on('gameOver', () => {
 
 socket.on('hitted', () => {
   syncEmit(() => {
-    canvas.classList.remove('anim');
-    setInterval(() => { canvas.classList.add('anim') }, 100);
+    canvas.classList.remove('animhit');
+    setTimeout(() => {
+      canvas.classList.add('animhit')
+    }, 100);
+
     canvas.style.animationPlayState = 'running';
+    // canvas.classList = '';
     updateHealth();
   });
 });
+
+socket.on('healthup', () => {
+  syncEmit(() => {
+    // canvas.style.animationPlayState = 'paused';
+    // canvas.classList.remove('animheal');
+    // setInterval(() => { canvas.style.animationPlayState = 'paused' }, 2000);
+    // setInterval(() => {
+    //   canvas.classList.add('animheal')
+    // }, 100);
+    // canvas.classList.add('animheal')
+    // canvas.style.animationPlayState = 'running';
+    // canvas.classList = '';
+    updateHealth();
+  });
+})
 
 socket.on('frag', () => {
   kills++;
@@ -305,3 +396,7 @@ const clearSpaces = s => {
     return '';
   return s;
 };
+
+setInterval(() => {
+  socket.emit('getMe');
+}, 100);
