@@ -10,6 +10,7 @@ let deaths = 0;
 let muted = false;
 let walls = [];
 let powerups = [];
+let tempvec = { x: 0, y: 0 };
 
 window.onload = () => {
   muteButton.style.backgroundImage = 'url(\'./img/Mute.png\')';
@@ -214,6 +215,7 @@ socket.on('update', data => {
   });
 
   ctx.fillStyle = ctx.createPattern(wallimg, 'repeat');
+
   walls.forEach(wall => {
     // ctx.fillRect(50 * wall.x, 50 * wall.y, wall.w, wall.h);
     ctx.drawImage(wallimg, 50 * wall.x, 50 * wall.y);
@@ -223,12 +225,18 @@ socket.on('update', data => {
     if (player.x - player.size < x + wall.w && player.x + player.size > x &&
       player.y + player.size > y && player.y - player.size < y + wall.h) {
       if (player.y + player.size > y && player.y - player.size < y + wall.h) {
+        // player.vector.y = -player.vector.y;
         player.vector.x = -player.vector.x;
+        // player.vector.x = 0;
+        // player.vector.y = 0;
         player.x += player.x - x < 0 ? -s - 1 : s + 1;
       }
 
       if (player.x + player.size > x && player.x - player.size < x + wall.w) {
+        // player.vector.x = 0;
+        // player.vector.y = 0;
         player.vector.y = -player.vector.y;
+        // player.vector.x = -player.vector.x;
         player.y += player.y - y < 0 ? -s - 1 : s + 1;
       }
       // ctx.fillStyle = 'red'

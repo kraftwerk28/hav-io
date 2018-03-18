@@ -51,7 +51,6 @@ io.sockets.on('connection', (socket) => {
   });
 
   socket.on('updateMe', (data) => {
-    console.log('upMe' + Math.random());
     const i = players.findIndex(pl => pl.id === data.id);
     if (i > -1) {
       players[i] = data;
@@ -204,10 +203,8 @@ const spawnPowerup = () => {
     };
     return false;
   }
-  do {
-    pu = new classes.Powerup(randomRange(0, canvas.width / 50), randomRange(0, canvas.height / 50), type);
-  }
-  while (collides(pu))
-  powerups.push(pu);
+  pu = new classes.Powerup(randomRange(0, canvas.width / 50), randomRange(0, canvas.height / 50), type);
+  if (!collides(pu))
+    powerups.push(pu);
   io.sockets.emit('updatePowerups', powerups);
 };
