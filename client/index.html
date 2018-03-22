@@ -12,7 +12,7 @@
 <body>
   <div id="kills" class="header" style="float: left; color: limegreen; font-size: xx-large">kills:</div>
   <div id="deaths" class="header" style="float: right; color: tomato; font-size: xx-large">deaths:</div>
-  <div class="header">hav-io</div>
+  <div id="hav-io" class="header">hav-io</div>
   <table>
     <tr>
       <td id="left">
@@ -47,11 +47,12 @@ gl)
         </textarea>
         <div class="textArea" style="width: 290px; height: 150px; background-color: palegreen">
           <div style="text-align: center; font-weight: bolder;">CONNECTED:</div>
-          <div id="connected" style="height: 90%; white-space: pre; overflow-y: scroll"></div>
+        <div id="connected" style="height: 90%; white-space: pre; overflow-y: scroll"></div>
         </div>
       </td>
     </tr>
   </table>
+  <div id="roomId"></div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.4/socket.io.js"></script>
   <script src="./game.js"></script>

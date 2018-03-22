@@ -5,12 +5,16 @@ let player = {};
 let movevector = [0, 0];
 let awaitFunc = null;
 let bulletClock;
+let canvOffset = {};
+let rClick = false;
+let lClick = false;
+
 let kills = 0;
 let deaths = 0;
+
 let muted = false;
 let walls = [];
 let powerups = [];
-let tempvec = { x: 0, y: 0 };
 
 window.onload = () => {
   muteButton.style.backgroundImage = 'url(\'./img/Mute.png\')';
@@ -25,11 +29,24 @@ window.onload = () => {
       socket.emit('updateMe', player);
       nicknameinput.value = n;
     });
+  canvOffset = canvas.getBoundingClientRect();
 };
 
 window.onunload = () => {
   localStorage.setItem('haviodeaths', deaths);
   localStorage.setItem('haviokills', kills);
+};
+
+window.oncontextmenu = (e) => {
+  e.preventDefault();
+}
+
+window.onresize = () => {
+  canvOffset = canvas.getBoundingClientRect();
+}
+
+window.onscroll = () => {
+  canvOffset = canvas.getBoundingClientRect();
 };
 
 //#region audio
@@ -75,7 +92,6 @@ const ctx = canvas.getContext('2d');
 ctx.imageSmoothingEnabled = false;
 canvas.width = 700;
 canvas.height = 500;
-const canvOffset = canvas.getBoundingClientRect();
 // ctx.fillStyle = 'lime';
 ctx.strokeStyle = 'yellow';
 ctx.font = '12px Consolas';
@@ -93,6 +109,7 @@ canvas.onmousemove = (e) => {
 
 canvas.onmouseleave = () => {
   clearInterval(bulletClock);
+  speedup(false);
 }
 
 canvas.oncontextmenu = () => false;
@@ -100,21 +117,28 @@ canvas.oncontextmenu = () => false;
 canvas.onmousedown = (e) => {
   e.preventDefault();
   if (e.button === 0) {
-    shoot();
-    bulletClock = setInterval(() => {
+    lClick = true;
+    if (!rClick) {
       shoot();
-    }, 500);
+      bulletClock = setInterval(() => {
+        shoot();
+      }, 500);
+    }
   }
   else if (e.button === 2) {
-    speedup(true);
+    rClick = true;
+    if (!lClick)
+      speedup(true);
   }
 };
 canvas.onmouseup = (e) => {
   e.preventDefault();
   if (e.button === 0) {
+    lClick = false;
     clearInterval(bulletClock);
   }
   else if (e.button === 2) {
+    rClick = false;
     speedup(false);
   }
 }
@@ -132,8 +156,10 @@ heart_img.src = './img/heart_powerup.png';
 
 socket.on('welcome', data => {
   player = data.player;
+  document.getElementById('hav-io').textContent = `hav-io   room id: ${player.roomId}`
   walls = data.walls;
   powerups = data.powerups;
+  chatField.textContent = data.messages;
   updateHealth();
 });
 
@@ -382,7 +408,7 @@ const mute = () => {
 const updatescore = () => {
   document.getElementById('kills').textContent = `kills: ${kills ? kills : 0}`;
   document.getElementById('deaths').textContent = `deaths: ${deaths ? deaths : 0}`;
-}
+};
 
 const updateHealth = () => {
   Array.prototype.forEach.call(heartContainer.children, child => {
@@ -393,7 +419,7 @@ const updateHealth = () => {
     heartContainer.children[i].style.display = 'inline';
     i++;
   }
-}
+};
 
 const clearSpaces = s => {
   while (s.charAt(0) === ' ')
