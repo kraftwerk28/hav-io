@@ -128,7 +128,7 @@ io.sockets.on('connection', (socket) => {
     const i = room.players.findIndex(pl => pl.id === player.id);
     if (i > -1) {
       room.players.splice(i, 1);
-      if (room.length < 1)
+      if (room.players.length < 1)
         rooms.splice(player.roomId, 1);
     }
   });
