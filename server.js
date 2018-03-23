@@ -90,7 +90,6 @@ io.sockets.on('connection', (socket) => {
   });
 
   socket.on('speedup', val => {
-    console.log('speedup', val)
     if (val)
       player.speed = 4;
     else

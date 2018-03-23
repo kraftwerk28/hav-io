@@ -8,6 +8,7 @@ let bulletClock;
 let canvOffset = {};
 let rClick = false;
 let lClick = false;
+let pingStart = 0;
 
 let kills = 0;
 let deaths = 0;
@@ -162,10 +163,11 @@ socket.on('welcome', data => {
   powerups = data.powerups;
   chatField.textContent = data.messages;
   updateHealth();
-  // setTimeout(() => { setInterval(calcCollisions, 1000 / 50) }, 15);
 });
 
 socket.on('updatePlayer', data => {
+  document.getElementById('ping').textContent = 'ping: ' + (Date.now() - pingStart);
+
   player = data;
   if (awaitFunc) {
     awaitFunc();
@@ -286,7 +288,6 @@ socket.on('gameOver', () => {
     canvas.classList.add('animhit')
   }, 100);
   canvas.style.animationPlayState = 'running';
-  // setInterval(() => { canvas.style.animationPlayState = 'paused'; }, 3000);
   updatescore();
 });
 
@@ -305,15 +306,6 @@ socket.on('hitted', () => {
 
 socket.on('healthup', () => {
   syncEmit(() => {
-    // canvas.style.animationPlayState = 'paused';
-    // canvas.classList.remove('animheal');
-    // setInterval(() => { canvas.style.animationPlayState = 'paused' }, 2000);
-    // setInterval(() => {
-    //   canvas.classList.add('animheal')
-    // }, 100);
-    // canvas.classList.add('animheal')
-    // canvas.style.animationPlayState = 'running';
-    // canvas.classList = '';
     updateHealth();
   });
 })
@@ -337,7 +329,6 @@ const shoot = () => {
 };
 
 const speedup = (val) => {
-  console.log(val + ' speed');
   if (val)
     sfx.speedup.play();
   else {
@@ -447,5 +438,6 @@ const calcCollisions = () => {
 };
 
 setInterval(() => {
+  pingStart = Date.now();
   socket.emit('getMe');
 }, 100);
