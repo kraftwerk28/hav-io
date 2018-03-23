@@ -14,14 +14,15 @@ function Wall(x, y, w, h) {
   }
 }
 
-function Room(maxPlayers, ...players) {
+function Room(size, maxPlayers, ...players) {
+  this.size = size;
   this.maxPlayers = maxPlayers;
   this.players = players ? players : [];
   this.walls = [];
   this.powerups = [];
-  for (let i = 0; i < 20; i++) {
-    this.walls.push(new Wall(randomRange(0, canvas.width / 50), randomRange(0, canvas.height / 50), 50, 50));
-  }
+  // for (let i = 0; i < 20; i++) {
+  //   this.walls.push(new Wall(randomRange(0, canvas / 50), randomRange(0, canvas.height / 50), 50, 50));
+  // }
 }
 
 function Player(id, roomId) {

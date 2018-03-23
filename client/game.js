@@ -9,6 +9,25 @@ let canvOffset = {};
 let rClick = false;
 let lClick = false;
 let pingStart = 0;
+let size = 1000;
+let canvasCenter = {};
+let smoothness = 0.2;
+
+const viewport = {
+  x: 0, y: 0, w: 0, h: 0,
+  init(width, height) {
+    this.w = width;
+    this.h = height;
+  },
+  center(posx, posy) {
+    this.x = interpolate(this.x, posx - Math.ceil(this.w / 2));
+    this.y = interpolate(this.y, posy - Math.ceil(this.h / 2));
+    if (this.x < 0) this.x = 0;
+    if (this.y < 0) this.y = 0;
+    if (this.x + this.w > size) this.x = size - this.w;
+    if (this.y + this.h > size) this.y = size - this.h;
+  }
+};
 
 let kills = 0;
 let deaths = 0;
@@ -31,6 +50,8 @@ window.onload = () => {
       nicknameinput.value = n;
     });
   canvOffset = canvas.getBoundingClientRect();
+  viewport.init(canvas.width, canvas.height);
+  canvasCenter = { cx: Math.floor(canvas.width / 2), cy: Math.floor(canvas.height / 2) };
 };
 
 window.onunload = () => {
@@ -53,7 +74,10 @@ const sfx = {
   die: new Audio('./sfx/Death.wav'),
   shoot: new Audio('./sfx/Shoot.wav'),
   speedup: new Audio('./sfx/Speedup.wav'),
-  soundtrack: new Audio('./sfx/st.mp3')
+  soundtrack: new Audio('./sfx/st.mp3'),
+  heartPick: new Audio('./sfx/HeartPickup.wav'),
+  shieldPick: new Audio('./sfx/ShieldPickup.wav'),
+  hit: new Audio('./sfx/Hit.wav'),
 }
 sfx.soundtrack.loop = true;
 sfx.soundtrack.volume = 0.5;
@@ -100,7 +124,7 @@ ctx.textAlign = 'center';
 canvas.onmousemove = (e) => {
   const x = e.x - canvOffset.x;
   const y = e.y - canvOffset.y;
-  const vec = [x - player.x, y - player.y];
+  const vec = [x - player.x + viewport.x, y - player.y + viewport.y];
   const l = Math.sqrt(Math.pow(vec[0], 2) + Math.pow(vec[1], 2));
   const vector = { x: vec[0] / l, y: vec[1] / l };
   socket.emit('move', { vector });
@@ -159,32 +183,27 @@ heart_img.src = './img/heart_powerup.png';
 socket.on('welcome', data => {
   player = data.player;
   document.getElementById('hav-io').textContent = `hav-io   room id: ${player.roomId}`
-  walls = data.walls;
-  powerups = data.powerups;
+  walls = data.room.walls;
+  powerups = data.room.powerups;
+  size = data.size
   chatField.textContent = data.messages;
   updateHealth();
-});
-
-socket.on('updatePlayer', data => {
-  document.getElementById('ping').textContent = 'ping: ' + (Date.now() - pingStart);
-
-  player = data;
-  if (awaitFunc) {
-    awaitFunc();
-    awaitFunc = null;
-  }
-});
-
-socket.on('updatePowerups', data => {
-  powerups = data;
+  setTimeout(() => setInterval(() => {
+    calcCollisions();
+    viewport.center(player.x, player.y);
+  }, 1000 / 50), 10);
 });
 
 socket.on('update', data => {
   ctx.clearRect(0, 0, 700, 500);
 
+  // viewport.center(player.x, player.y);
+
+  canvas.style.backgroundPosition = `${-viewport.x}px ${-viewport.y}px`;
+
   data.players.forEach(p => {
-    const x = Math.round(p.x);
-    const y = Math.round(p.y);
+    const x = Math.round(p.x) - viewport.x;
+    const y = Math.round(p.y) - viewport.y;
     const grad = ctx.createRadialGradient(x, y, 0, x, y, p.size * 4);
     grad.addColorStop(0, 'white');
     grad.addColorStop(1, 'transparent');
@@ -231,7 +250,7 @@ socket.on('update', data => {
     }
     ctx.fillStyle = 'red';
     p.bullets.forEach(b => {
-      ctx.fillRect(b.x - 2, b.y - 2, 4, 4);
+      ctx.fillRect(b.x - viewport.x - 2, b.y - viewport.y - 2, 4, 4);
     })
     if (!p.vulnerable) {
       const grad = ctx.createRadialGradient(x, y, 0, x, y, p.size * 3);
@@ -247,10 +266,10 @@ socket.on('update', data => {
   ctx.fillStyle = ctx.createPattern(wallimg, 'repeat');
 
   walls.forEach(wall => {
-    ctx.drawImage(wallimg, 50 * wall.x, 50 * wall.y);
+    ctx.drawImage(wallimg, 50 * wall.x - viewport.x, 50 * wall.y - viewport.y);
   });
 
-  calcCollisions();
+  // calcCollisions();
 
   powerups.forEach((pu, i) => {
     const x = pu.x * 50;
@@ -258,14 +277,32 @@ socket.on('update', data => {
     const lowb = 15;
     const topb = 35;
     if (pu.type === 'shield')
-      ctx.drawImage(shield_img, x, y);
+      ctx.drawImage(shield_img, x - viewport.x, y - viewport.y);
     else if (pu.type === 'heart')
-      ctx.drawImage(heart_img, x, y);
+      ctx.drawImage(heart_img, x - viewport.x, y - viewport.y);
     if (player.x > x + lowb && player.x < x + topb && player.y > y + lowb && player.y < y + topb) {
       powerups.splice(i, 1);
+      if (pu.type === 'heart')
+        sfx.heartPick.play();
+      else if (pu.type === 'shield')
+        sfx.shieldPick.play();
       socket.emit('pickupPowerup', i);
     }
   });
+});
+
+socket.on('updatePlayer', data => {
+  document.getElementById('ping').textContent = 'ping: ' + (Date.now() - pingStart);
+
+  player = data;
+  if (awaitFunc) {
+    awaitFunc();
+    awaitFunc = null;
+  }
+});
+
+socket.on('updatePowerups', data => {
+  powerups = data;
 });
 
 socket.on('updateConnected', data => {
@@ -292,6 +329,7 @@ socket.on('gameOver', () => {
 });
 
 socket.on('hitted', () => {
+  sfx.hit.play();
   syncEmit(() => {
     canvas.classList.remove('animhit');
     setTimeout(() => {
@@ -299,7 +337,6 @@ socket.on('hitted', () => {
     }, 100);
 
     canvas.style.animationPlayState = 'running';
-    // canvas.classList = '';
     updateHealth();
   });
 });
@@ -345,6 +382,10 @@ const syncEmit = (callback) => {
   socket.emit('getMe');
   awaitFunc = callback;
 };
+
+const interpolate = (start, end) => (
+  start + (end - start) * smoothness
+)
 
 const reload = () => {
   setInterval(() => { location.reload() }, 200)

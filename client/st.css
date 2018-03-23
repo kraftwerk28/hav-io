@@ -8,11 +8,10 @@ body {
 }
 
 #game {
-  background-color: black;
+  background-image: url('./img/floor.png');
   margin: 10px;
   box-shadow: 0px 0px 30px 2px grey;
   border-radius: 10px;
-  cursor: crosshair;
   animation-duration: 2s;
 }
 
