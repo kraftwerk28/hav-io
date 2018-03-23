@@ -1,11 +1,14 @@
 'use strict';
 
+const express = require('express');
+const app = express();
 const fs = require('fs');
 const http = require('http');
 const classes = require('./classes');
 const files = {};
 let messages = '';
 
+/*
 const readR = (root, path) => {
   const getFilenames = (path, prefix) => {
     if (fs.lstatSync(root + prefix + path).isDirectory()) {
@@ -24,16 +27,17 @@ const readR = (root, path) => {
 
   return flatty(getFilenames(path, ''));
 };
+*/
+// readR('client/', '').forEach(f => {
+//   const key = (f === '/index.html' ? '/' : f);
+//   files[key] = fs.readFileSync('./client/' + f);
+// });
 
-readR('client/', '').forEach(f => {
-  const key = (f === '/index.html' ? '/' : f);
-  files[key] = fs.readFileSync('./client/' + f);
-});
+const server = http.createServer(app);
 
-const server = http.createServer((req, res) => {
-  const data = files[req.url] || files['/'];
-  res.writeHead(200);
-  res.end(data);
+app.use(express.static(__dirname + '/client/'));
+app.get('/', (req, res) => {
+  res.sendFile(__dirname + '/client/index.html');
 });
 
 server.listen(80);
