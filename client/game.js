@@ -404,6 +404,8 @@ const calcCollisions = () => {
       if (b.x - 2 < x + wall.w && b.x + 2 > x &&
         b.y + 2 > y && b.y - 2 < y + wall.h) {
         player.bullets.splice(i, 1);
+        socket.emit('updateMe', player);
+        break;
       }
     }
 
