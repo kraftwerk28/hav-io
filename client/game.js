@@ -37,9 +37,7 @@ window.onunload = () => {
   localStorage.setItem('haviokills', kills);
 };
 
-window.oncontextmenu = (e) => {
-  e.preventDefault();
-}
+window.oncontextmenu = () => false;
 
 window.onresize = () => {
   canvOffset = canvas.getBoundingClientRect();
@@ -76,7 +74,7 @@ nicknameinput.oninput = (e) => {
     socket.emit('updateMe', player);
     socket.emit('updateConnected');
   });
-}
+};
 chatInput.onkeydown = (e) => {
   const str = clearSpaces(chatInput.value);
   if (e.keyCode === 13 && str.length > 0) {
@@ -110,9 +108,11 @@ canvas.onmousemove = (e) => {
 canvas.onmouseleave = () => {
   clearInterval(bulletClock);
   speedup(false);
+  lClick = false;
+  rClick = false;
 }
 
-canvas.oncontextmenu = () => false;
+// canvas.oncontextmenu = () => false;
 
 canvas.onmousedown = (e) => {
   e.preventDefault();
@@ -154,6 +154,7 @@ const heart_img = new Image();
 heart_img.src = './img/heart_powerup.png';
 //#endregion
 
+//#region socket.on
 socket.on('welcome', data => {
   player = data.player;
   document.getElementById('hav-io').textContent = `hav-io   room id: ${player.roomId}`
@@ -161,6 +162,7 @@ socket.on('welcome', data => {
   powerups = data.powerups;
   chatField.textContent = data.messages;
   updateHealth();
+  // setTimeout(() => { setInterval(calcCollisions, 1000 / 50) }, 15);
 });
 
 socket.on('updatePlayer', data => {
@@ -243,45 +245,10 @@ socket.on('update', data => {
   ctx.fillStyle = ctx.createPattern(wallimg, 'repeat');
 
   walls.forEach(wall => {
-    // ctx.fillRect(50 * wall.x, 50 * wall.y, wall.w, wall.h);
     ctx.drawImage(wallimg, 50 * wall.x, 50 * wall.y);
-    const x = wall.x * 50;
-    const y = wall.y * 50;    //collision
-    const s = player.speed;
-    if (player.x - player.size < x + wall.w && player.x + player.size > x &&
-      player.y + player.size > y && player.y - player.size < y + wall.h) {
-      if (player.y + player.size > y && player.y - player.size < y + wall.h) {
-        // player.vector.y = -player.vector.y;
-        player.vector.x = -player.vector.x;
-        // player.vector.x = 0;
-        // player.vector.y = 0;
-        player.x += player.x - x < 0 ? -s - 1 : s + 1;
-      }
-
-      if (player.x + player.size > x && player.x - player.size < x + wall.w) {
-        // player.vector.x = 0;
-        // player.vector.y = 0;
-        player.vector.y = -player.vector.y;
-        // player.vector.x = -player.vector.x;
-        player.y += player.y - y < 0 ? -s - 1 : s + 1;
-      }
-      // ctx.fillStyle = 'red'
-      // ctx.fillRect(wall.x, wall.y, wall.w, wall.h);
-      // ctx.fillStyle = ctx.createPattern(wallimg, 'repeat');
-      // player.vector.x = -player.vector.x;
-      socket.emit('updateMe', player);
-    }
-
-    for (let i = 0; i < player.bullets.length; i++) {
-      const b = player.bullets[i];
-      if (b.x - 2 < x + wall.w && b.x + 2 > x &&
-        b.y + 2 > y && b.y - 2 < y + wall.h) {
-        player.bullets.splice(i, 1);
-        socket.emit('updateMe', player);
-      }
-    }
-
   });
+
+  calcCollisions();
 
   powerups.forEach((pu, i) => {
     const x = pu.x * 50;
@@ -360,6 +327,8 @@ socket.on('newMsg', data => {
   chatField.textContent += data;
 });
 
+//#endregion
+
 const shoot = () => {
   sfx.shoot.play();
   syncEmit(() => {
@@ -368,6 +337,7 @@ const shoot = () => {
 };
 
 const speedup = (val) => {
+  console.log(val + ' speed');
   if (val)
     sfx.speedup.play();
   else {
@@ -429,6 +399,51 @@ const clearSpaces = s => {
   if (s === ' ')
     return '';
   return s;
+};
+
+const calcCollisions = () => {
+
+  for (let i = 0; i < walls.length; i++) {
+    const wall = walls[i];
+    const x = wall.x * 50;
+    const y = wall.y * 50;
+
+    for (let i = 0; i < player.bullets.length; i++) {
+      const b = player.bullets[i];
+      if (b.x - 2 < x + wall.w && b.x + 2 > x &&
+        b.y + 2 > y && b.y - 2 < y + wall.h) {
+        player.bullets.splice(i, 1);
+      }
+    }
+
+    const s = player.speed;
+    const fdx = player.vector.x * player.speed;
+    const fdy = player.vector.y * player.speed;
+    if (player.x - player.size + fdx < x + wall.w && player.x + player.size + fdx > x &&
+      player.y + player.size + fdy > y && player.y - player.size + fdy < y + wall.h) {
+
+      if (player.y + player.size > y && player.y - player.size < y + wall.h) {
+        // player.vector.x = -player.vector.x;
+        // player.x += player.x - x < 0 ? -s - 1 : s + 1;
+        player.x -= player.vector.x * player.speed;
+        // player.x -= Math.sign(player.vector.x);
+      }
+      if (player.x + player.size > x && player.x - player.size < x + wall.w) {
+        // player.vector.y = -player.vector.y;
+        // player.y += player.y - y < 0 ? -s - 1 : s + 1;
+        player.y -= player.vector.y * player.speed;
+        // player.y -= Math.sign(player.vector.y);
+      }
+
+      socket.emit('updateMe', player);
+      // syncEmit(() => {
+      //   socket.emit('updateMe', player);
+      // })
+      break;
+    }
+    // player.collides = false;
+  }
+
 };
 
 setInterval(() => {

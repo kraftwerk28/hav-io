@@ -35,6 +35,7 @@ function Player(id, roomId) {
   this.vulnerable = false;
   this.health = 3;
   this.roomId = roomId;
+  this.collides = false;
 };
 
 function Powerup(x, y, type) {

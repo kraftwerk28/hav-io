@@ -67,12 +67,17 @@ io.sockets.on('connection', (socket) => {
   });
 
   socket.on('updateMe', (data) => {
+    // player = data;
     const i = room.players.findIndex(pl => pl.id === data.id);
     if (i > -1) {
       room.players[i] = data;
       player = data;
       io.sockets.emit('updateConnected', room.players);
     }
+  });
+
+  socket.on('collided', data => {
+    player.collides = data.collides;
   });
 
   socket.on('shoot', () => {
@@ -85,6 +90,7 @@ io.sockets.on('connection', (socket) => {
   });
 
   socket.on('speedup', val => {
+    console.log('speedup', val)
     if (val)
       player.speed = 4;
     else
@@ -148,8 +154,10 @@ setInterval(() => { // sever clock
 
   rooms.forEach(room => {
     room.players.forEach(player => {
+      // console.log(player.collides);
       player.x += player.vector.x * player.speed;
       player.y += player.vector.y * player.speed;
+
       if (player.x - player.size < 0 || player.x + player.size > canvas.width)
         player.vector.x = -player.vector.x;
       if (player.y - player.size < 0 || player.y + player.size > canvas.height)
