@@ -470,16 +470,16 @@ const calcCollisions = () => {
     if (player.x - player.size + fdx < x + wall.w && player.x + player.size + fdx > x &&
       player.y + player.size + fdy > y && player.y - player.size + fdy < y + wall.h) {
 
-      if (player.y + player.size > y && player.y - player.size < y + wall.h) {
+      if (player.y > y && player.y < y + wall.h) {
         player.vector.x = -player.vector.x;
         // player.x += player.x - x < 0 ? -s - 1 : s + 1;
-        player.x += Math.sign(player.vector.x) * 2 * player.speed;
+        player.x += Math.sign(player.vector.x) * 3 * player.speed;
         // player.x -= Math.sign(player.vector.x);
       }
-      if (player.x + player.size > x && player.x - player.size < x + wall.w) {
+      if (player.x > x && player.x < x + wall.w) {
         player.vector.y = -player.vector.y;
         // player.y += player.y - y < 0 ? -s - 1 : s + 1;
-        player.y += Math.sign(player.vector.y) * 2 * player.speed;
+        player.y += Math.sign(player.vector.y) * 5 * player.speed;
         // player.y -= Math.sign(player.vector.y);
       }
 
