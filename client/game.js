@@ -14,7 +14,10 @@ let canvasCenter = {};
 let smoothness = 0.2;
 
 const viewport = {
-  x: 0, y: 0, w: 0, h: 0,
+  x: 0,
+  y: 0,
+  w: 0,
+  h: 0,
   init(width, height) {
     this.w = width;
     this.h = height;
@@ -51,7 +54,10 @@ window.onload = () => {
     });
   canvOffset = canvas.getBoundingClientRect();
   viewport.init(canvas.width, canvas.height);
-  canvasCenter = { cx: Math.floor(canvas.width / 2), cy: Math.floor(canvas.height / 2) };
+  canvasCenter = {
+    cx: Math.floor(canvas.width / 2),
+    cy: Math.floor(canvas.height / 2)
+  };
 };
 
 window.onunload = () => {
@@ -104,7 +110,10 @@ chatInput.onkeydown = (e) => {
   const str = clearSpaces(chatInput.value);
   if (e.keyCode === 13 && str.length > 0) {
     e.preventDefault();
-    socket.emit('newMsg', { player, msg: str });
+    socket.emit('newMsg', {
+      player,
+      msg: str
+    });
     chatInput.value = '';
   }
 };
@@ -126,8 +135,13 @@ canvas.onmousemove = (e) => {
   const y = e.y - canvOffset.y;
   const vec = [x - player.x + viewport.x, y - player.y + viewport.y];
   const l = Math.sqrt(Math.pow(vec[0], 2) + Math.pow(vec[1], 2));
-  const vector = { x: vec[0] / l, y: vec[1] / l };
-  socket.emit('move', { vector });
+  const vector = {
+    x: vec[0] / l,
+    y: vec[1] / l
+  };
+  socket.emit('move', {
+    vector
+  });
 };
 
 canvas.onmouseleave = () => {
@@ -149,8 +163,7 @@ canvas.onmousedown = (e) => {
         shoot();
       }, 500);
     }
-  }
-  else if (e.button === 2) {
+  } else if (e.button === 2) {
     rClick = true;
     if (!lClick)
       speedup(true);
@@ -161,8 +174,7 @@ canvas.onmouseup = (e) => {
   if (e.button === 0) {
     lClick = false;
     clearInterval(bulletClock);
-  }
-  else if (e.button === 2) {
+  } else if (e.button === 2) {
     rClick = false;
     speedup(false);
   }
@@ -388,7 +400,9 @@ const interpolate = (start, end) => (
 )
 
 const reload = () => {
-  setInterval(() => { location.reload() }, 200)
+  setInterval(() => {
+    location.reload()
+  }, 200)
 };
 
 const mute = () => {
@@ -459,13 +473,13 @@ const calcCollisions = () => {
       if (player.y + player.size > y && player.y - player.size < y + wall.h) {
         player.vector.x = -player.vector.x;
         // player.x += player.x - x < 0 ? -s - 1 : s + 1;
-        player.x += Math.sign(player.vector.x) * player.speed;
+        player.x += Math.sign(player.vector.x) * 2 * player.speed;
         // player.x -= Math.sign(player.vector.x);
       }
       if (player.x + player.size > x && player.x - player.size < x + wall.w) {
         player.vector.y = -player.vector.y;
         // player.y += player.y - y < 0 ? -s - 1 : s + 1;
-        player.y += Math.sign(player.vector.y) * player.speed;
+        player.y += Math.sign(player.vector.y) * 2 * player.speed;
         // player.y -= Math.sign(player.vector.y);
       }
 
