@@ -49,8 +49,12 @@ const rooms = [];
 const maxPl = 5;
 const size = 1500;
 const wallCount = size / 20;
+const spawnCount = 4;
 
-const canvas = { width: 700, height: 500 };
+const canvas = {
+  width: 700,
+  height: 500
+};
 
 const randomRange = (start, end) => (
   Math.floor(Math.random() * end + start)
@@ -80,6 +84,7 @@ const createPlayer = (id) => {
 
 io.sockets.on('connection', (socket) => {
   let player = createPlayer(socket.id);
+  respawn(player);
   let room = rooms[player.roomId];
   const roomid = player.roomId;
   socket.emit('welcome', {
@@ -101,7 +106,6 @@ io.sockets.on('connection', (socket) => {
   });
 
   socket.on('updateMe', (data) => {
-    // player = data;
     const i = room.players.findIndex(pl => pl.id === data.id);
     if (i > -1) {
       room.players[i] = data;
@@ -228,7 +232,9 @@ setInterval(() => { // sever clock
       // io.sockets.connected[player.id].emit({ players: room.players });
     });
     room.players.forEach(p => {
-      io.sockets.connected[p.id].emit('update', { players: room.players });
+      io.sockets.connected[p.id].emit('update', {
+        players: room.players
+      });
     });
   });
 
@@ -242,9 +248,12 @@ setInterval(() => {
 }, 5000);
 
 const respawn = (player) => {
-  player.x = size / 2;
-  player.y = size / 2;
-  player.vector = { x: 0, y: 0 };
+  player.x = rooms[player.roomId].spawnpoints[randomRange(0, spawnCount)].x;
+  player.y = rooms[player.roomId].spawnpoints[randomRange(0, spawnCount)].y;
+  player.vector = {
+    x: 0,
+    y: 0
+  };
   // player.deaths++;
   player.vulnerable = false;
   player.health = 3;
@@ -263,6 +272,16 @@ const distanse = (x1, y1, x2, y2) => (
 const generateWalls = (ind) => {
   for (let i = 0; i < wallCount; i++) {
     rooms[ind].walls.push(new classes.Wall(randomRange(0, size / 50), randomRange(0, size / 50), 50, 50));
+  }
+  for (let i = 0; i < spawnCount; i++) {
+    const x = randomRange(0, size / 50);
+    const y = randomRange(0, size / 50);
+    if (rooms[ind].walls.every(wall => (wall.x !== x) && (wall.y !== y)))
+      rooms[ind].spawnpoints.push({
+        x: x * 50 + 25,
+        y: y * 50 + 25
+      });
+    else i--;
   }
 };
 

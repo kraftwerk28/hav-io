@@ -20,6 +20,7 @@ function Room(size, maxPlayers, ...players) {
   this.players = players ? players : [];
   this.walls = [];
   this.powerups = [];
+  this.spawnpoints = [];
   // for (let i = 0; i < 20; i++) {
   //   this.walls.push(new Wall(randomRange(0, canvas / 50), randomRange(0, canvas.height / 50), 50, 50));
   // }

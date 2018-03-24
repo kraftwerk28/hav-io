@@ -12,7 +12,7 @@ body {
   margin: 10px;
   box-shadow: 0px 0px 30px 2px grey;
   border-radius: 10px;
-  animation-duration: 2s;
+  animation-duration: 1s;
 }
 
 #chatButton {
@@ -53,13 +53,8 @@ body {
 
 @keyframes gameover {
   0% {
-    background-color: red;
-  }
-  25% {
-    background-color: black;
-  }
-  50% {
-    background-color: red;
+    background-image: none;
+    background-color: blue;
   }
   100% {
     background-color: black;
@@ -68,18 +63,22 @@ body {
 
 @keyframes hit {
   0% {
+    background-image: none;
     background-color: red;
   }
   100% {
+    /* background-image: none; */
     background-color: black;
   }
 }
 
 @keyframes heal {
   0% {
+    background-image: none;
     background-color: lime;
   }
   100% {
+    /* background-image: none; */
     background-color: black;
   }
 }
