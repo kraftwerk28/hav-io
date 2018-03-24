@@ -1,5 +1,6 @@
 'use strict';
 
+const os = require('os');
 const express = require('express');
 const app = express();
 const fs = require('fs');
@@ -40,7 +41,7 @@ app.get('/', (req, res) => {
   res.sendFile(__dirname + '/client/index.html');
 });
 
-server.listen(80);
+server.listen(8080);
 
 const io = require('socket.io')(server);
 
