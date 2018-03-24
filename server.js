@@ -41,7 +41,7 @@ app.get('/', (req, res) => {
   res.sendFile(__dirname + '/client/index.html');
 });
 
-server.listen(8080);
+server.listen(80);
 
 const io = require('socket.io')(server);
 
