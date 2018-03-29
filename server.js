@@ -49,7 +49,7 @@ const rooms = [];
 const maxPl = 5;
 const size = 1500;
 const wallCount = size / 20;
-const spawnCount = 4;
+const spawnCount = 6;
 
 const canvas = {
   width: 700,
@@ -83,9 +83,21 @@ const createPlayer = (id) => {
 };
 
 io.sockets.on('connection', (socket) => {
+  console.log(socket.id + ' connected.')
   let player = createPlayer(socket.id);
   respawn(player);
   let room = rooms[player.roomId];
+  const updateRoom = (method, data) => {
+    if (data)
+      room.players.forEach(p => {
+        io.sockets.connected[p.id].emit(method, data);
+      });
+    else
+      room.players.forEach(p => {
+        io.sockets.connected[p.id].emit(method);
+      });
+  };
+
   const roomid = player.roomId;
   socket.emit('welcome', {
     player,
@@ -110,8 +122,10 @@ io.sockets.on('connection', (socket) => {
     if (i > -1) {
       room.players[i] = data;
       player = data;
-      io.sockets.emit('updateConnected', room.players);
+
+      // io.sockets.emit('updateConnected', room.players);
     }
+    // updateRoom('update')
   });
 
   socket.on('collided', data => {
@@ -163,17 +177,21 @@ io.sockets.on('connection', (socket) => {
   socket.on('updateConnected', () => {
     room.players.forEach(p => {
       io.sockets.connected[p.id].emit('updateConnected', room.players);
-    })
-
+    });
   });
 
   socket.on('disconnect', () => {
     const i = room.players.findIndex(pl => pl.id === player.id);
     if (i > -1) {
       room.players.splice(i, 1);
+      room.players.forEach(p => {
+        io.sockets.connected[p.id].emit('updateConnected', room.players);
+      });
       if (room.players.length < 1)
         rooms.splice(player.roomId, 1);
+
     }
+    console.log(socket.id + ' disconnected.')
   });
 
   //#region chat
@@ -255,13 +273,20 @@ const respawn = (player) => {
     y: 0
   };
   // player.deaths++;
-  player.vulnerable = false;
-  player.health = 3;
-  setTimeout(() => {
-    // console.log('unshield' + player.id);
-    player.vulnerable = true;
+
+  if (player.id in io.sockets.connected) {
+    player.vulnerable = false;
+    player.health = 3;
     io.sockets.connected[player.id].emit('updatePlayer', player);
-  }, 2000);
+    setTimeout(() => {
+      // console.log('unshield' + player.id);
+      if (player.id in io.sockets.connected) {
+        player.vulnerable = true;
+        io.sockets.connected[player.id].emit('updatePlayer', player);
+      }
+    }, 2000);
+  }
+
 
 };
 

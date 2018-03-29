@@ -1,4 +1,4 @@
-const circleCanvases = document.getElementsByClassName('buttonCanv');
+const circleCanvases = document.getElementsByClassName('circleCanvas');
 // const circleButtons = document.getElementById('circleButton');
 
 Array.prototype.forEach.call(circleCanvases, canvas => {
@@ -13,13 +13,9 @@ Array.prototype.forEach.call(circleCanvases, canvas => {
   const max = Math.floor(Math.sqrt(Math.pow(canvas.width, 2) +
     Math.pow(canvas.height, 2)));
 
-  let runs = false;
-  let pressed = false
   canvas.onmousedown = e => {
     const evt = e;
-    pressed = true
-    runs = true;
-
+    // console.log(`${offset.left} ${offset.top}`)
     let size = 0;
     const t = setInterval(() => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -28,24 +24,13 @@ Array.prototype.forEach.call(circleCanvases, canvas => {
       ctx.arc(e.clientX - offset.left, e.clientY - offset.top, size, 0, 2 * Math.PI);
       ctx.fill();
       size += delta;
+
       if (size > max) {
-        runs = false;
         clearInterval(t);
-        if (!pressed)
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
       }
     }, 20);
   };
-  canvas.onmouseup = e => {
-    pressed = false;
-    if (!runs)
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-  }
-  canvas.onmouseleave = () => {
-    pressed = false;
-    if (!runs)
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-  }
 });
 
 // const circleDropdowns = document.getElementsByClassName('')

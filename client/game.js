@@ -1,6 +1,7 @@
 'use strict';
 
-const socket = io();
+let socket;
+let syncEmit = (callback) => { awaitFunc = callback };
 let player = {};
 let movevector = [0, 0];
 let awaitFunc = null;
@@ -52,12 +53,15 @@ window.onload = () => {
       socket.emit('updateMe', player);
       nicknameinput.value = n;
     });
-  canvOffset = canvas.getBoundingClientRect();
+
   viewport.init(canvas.width, canvas.height);
   canvasCenter = {
     cx: Math.floor(canvas.width / 2),
     cy: Math.floor(canvas.height / 2)
   };
+  socket = io();
+  initSocket();
+  canvOffset = canvas.getBoundingClientRect();
 };
 
 window.onunload = () => {
@@ -192,187 +196,200 @@ heart_img.src = './img/heart_powerup.png';
 //#endregion
 
 //#region socket.on
-socket.on('welcome', data => {
-  player = data.player;
-  document.getElementById('hav-io').textContent = `hav-io   room id: ${player.roomId}`
-  walls = data.room.walls;
-  powerups = data.room.powerups;
-  size = data.size
-  chatField.textContent = data.messages;
-  updateHealth();
-  setTimeout(() => setInterval(() => {
-    calcCollisions();
-    viewport.center(player.x, player.y);
-  }, 1000 / 50), 10);
-});
+const initSocket = () => {
+  socket.on('welcome', data => {
+    player = data.player;
+    document.getElementById('hav-io').textContent = `hav-io   room id: ${player.roomId}`
+    walls = data.room.walls;
+    powerups = data.room.powerups;
+    size = data.size
+    chatField.textContent = data.messages;
+    updateHealth();
+    setTimeout(() => setInterval(() => {
+      calcCollisions();
+      viewport.center(player.x, player.y);
+    }, 1000 / 50), 10);
+  });
 
-socket.on('update', data => {
-  ctx.clearRect(0, 0, 700, 500);
+  socket.on('update', data => {
+    ctx.clearRect(0, 0, 700, 500);
 
-  // viewport.center(player.x, player.y);
+    // viewport.center(player.x, player.y);
 
-  canvas.style.backgroundPosition = `${-viewport.x}px ${-viewport.y}px`;
+    canvas.style.backgroundPosition = `${-viewport.x}px ${-viewport.y}px`;
 
-  data.players.forEach(p => {
-    const x = Math.round(p.x) - viewport.x;
-    const y = Math.round(p.y) - viewport.y;
-    const grad = ctx.createRadialGradient(x, y, 0, x, y, p.size * 4);
-    grad.addColorStop(0, 'white');
-    grad.addColorStop(1, 'transparent');
-    const angle = Math.atan2(p.vector.y, p.vector.x);
+    data.players.forEach(p => {
+      const x = Math.round(p.x) - viewport.x;
+      const y = Math.round(p.y) - viewport.y;
+      const grad = ctx.createRadialGradient(x, y, 0, x, y, p.size * 4);
+      grad.addColorStop(0, 'white');
+      grad.addColorStop(1, 'transparent');
+      const angle = Math.atan2(p.vector.y, p.vector.x);
 
 
-    ctx.fillStyle = grad;
-
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-    ctx.arc(x, y, p.size * 4, angle - (Math.PI / 4), angle + (Math.PI / 4));
-    ctx.lineTo(x, y);
-    ctx.fill();
-
-    if (p.speed <= 1)
-      switch (p.health) {
-        case 3:
-          ctx.fillStyle = 'lime';
-          break;
-        case 2:
-          ctx.fillStyle = 'yellow';
-          break;
-        case 1:
-          ctx.fillStyle = 'red';
-          break;
-      }
-    else
-      ctx.fillStyle = 'white';
-    ctx.beginPath();
-    ctx.arc(x, y, player.size, 0, Math.PI * 2);
-    ctx.fill();
-    if (player.id === p.id) {
-      const mygrad = ctx.createRadialGradient(x, y, 0, x, y, player.size * 3);
-      mygrad.addColorStop(0, ctx.fillStyle);
-      mygrad.addColorStop(1, 'transparent');
-      ctx.fillStyle = mygrad;
-      ctx.beginPath();
-      ctx.arc(x, y, player.size * 3, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    if (p.nickname) {
-      ctx.strokeText(p.nickname, x, y - 15);
-    }
-    ctx.fillStyle = 'red';
-    p.bullets.forEach(b => {
-      ctx.fillRect(b.x - viewport.x - 2, b.y - viewport.y - 2, 4, 4);
-    })
-    if (!p.vulnerable) {
-      const grad = ctx.createRadialGradient(x, y, 0, x, y, p.size * 3);
-      grad.addColorStop(1, 'chartreuse');
-      grad.addColorStop(0.5, 'transparent');
       ctx.fillStyle = grad;
+
       ctx.beginPath();
-      ctx.arc(x, y, p.size * 3, 0, Math.PI * 2);
+      ctx.moveTo(x, y);
+      ctx.arc(x, y, p.size * 4, angle - (Math.PI / 4), angle + (Math.PI / 4));
+      ctx.lineTo(x, y);
       ctx.fill();
+
+      if (p.speed <= 1)
+        switch (p.health) {
+          case 3:
+            ctx.fillStyle = 'lime';
+            break;
+          case 2:
+            ctx.fillStyle = 'yellow';
+            break;
+          case 1:
+            ctx.fillStyle = 'red';
+            break;
+        }
+      else
+        ctx.fillStyle = 'white';
+      ctx.beginPath();
+      ctx.arc(x, y, player.size, 0, Math.PI * 2);
+      ctx.fill();
+      if (player.id === p.id) {
+        const mygrad = ctx.createRadialGradient(x, y, 0, x, y, player.size * 3);
+        mygrad.addColorStop(0, ctx.fillStyle);
+        mygrad.addColorStop(1, 'transparent');
+        ctx.fillStyle = mygrad;
+        ctx.beginPath();
+        ctx.arc(x, y, player.size * 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      if (p.nickname) {
+        ctx.strokeText(p.nickname, x, y - 15);
+      }
+      ctx.fillStyle = 'red';
+      p.bullets.forEach(b => {
+        ctx.fillRect(b.x - viewport.x - 2, b.y - viewport.y - 2, 4, 4);
+      })
+      if (!p.vulnerable) {
+        const grad = ctx.createRadialGradient(x, y, 0, x, y, p.size * 3);
+        grad.addColorStop(1, 'chartreuse');
+        grad.addColorStop(0.5, 'transparent');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(x, y, p.size * 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    });
+
+    ctx.fillStyle = ctx.createPattern(wallimg, 'repeat');
+
+    walls.forEach(wall => {
+      ctx.drawImage(wallimg, 50 * wall.x - viewport.x, 50 * wall.y - viewport.y);
+    });
+
+    // calcCollisions();
+
+    powerups.forEach((pu, i) => {
+      const x = pu.x * 50;
+      const y = pu.y * 50;
+      const lowb = 15;
+      const topb = 35;
+      if (pu.type === 'shield')
+        ctx.drawImage(shield_img, x - viewport.x, y - viewport.y);
+      else if (pu.type === 'heart')
+        ctx.drawImage(heart_img, x - viewport.x, y - viewport.y);
+      if (player.x > x + lowb && player.x < x + topb && player.y > y + lowb && player.y < y + topb) {
+        powerups.splice(i, 1);
+        if (pu.type === 'heart')
+          sfx.heartPick.play();
+        else if (pu.type === 'shield')
+          sfx.shieldPick.play();
+        socket.emit('pickupPowerup', i);
+      }
+    });
+  });
+
+  socket.on('updatePlayer', data => {
+    document.getElementById('ping').textContent = 'ping: ' + (Date.now() - pingStart);
+
+    player = data;
+    if (awaitFunc) {
+      awaitFunc();
+      awaitFunc = null;
     }
   });
 
-  ctx.fillStyle = ctx.createPattern(wallimg, 'repeat');
-
-  walls.forEach(wall => {
-    ctx.drawImage(wallimg, 50 * wall.x - viewport.x, 50 * wall.y - viewport.y);
+  socket.on('updatePowerups', data => {
+    powerups = data;
   });
 
-  // calcCollisions();
-
-  powerups.forEach((pu, i) => {
-    const x = pu.x * 50;
-    const y = pu.y * 50;
-    const lowb = 15;
-    const topb = 35;
-    if (pu.type === 'shield')
-      ctx.drawImage(shield_img, x - viewport.x, y - viewport.y);
-    else if (pu.type === 'heart')
-      ctx.drawImage(heart_img, x - viewport.x, y - viewport.y);
-    if (player.x > x + lowb && player.x < x + topb && player.y > y + lowb && player.y < y + topb) {
-      powerups.splice(i, 1);
-      if (pu.type === 'heart')
-        sfx.heartPick.play();
-      else if (pu.type === 'shield')
-        sfx.shieldPick.play();
-      socket.emit('pickupPowerup', i);
-    }
+  socket.on('updateConnected', data => {
+    let str = '';
+    data.forEach(pl => {
+      if (pl.nickname && pl.nickname.length > 0) {
+        str += `${pl.nickname}\r\n`;
+      } else {
+        str += `player_${pl.id}\r\n`;
+      }
+    });
+    connected.textContent = str;
   });
-});
 
-socket.on('updatePlayer', data => {
-  document.getElementById('ping').textContent = 'ping: ' + (Date.now() - pingStart);
-
-  player = data;
-  if (awaitFunc) {
-    awaitFunc();
-    awaitFunc = null;
-  }
-});
-
-socket.on('updatePowerups', data => {
-  powerups = data;
-});
-
-socket.on('updateConnected', data => {
-  let str = '';
-  data.forEach(pl => {
-    if (pl.nickname && pl.nickname.length > 0) {
-      str += `${pl.nickname}\r\n`;
-    } else {
-      str += `player_${pl.id}\r\n`;
-    }
-  });
-  connected.textContent = str;
-});
-
-socket.on('gameOver', () => {
-  sfx.die.play();
-  deaths++;
-  canvas.classList = '';
-  setTimeout(() => {
-    canvas.classList.add('animhit')
-  }, 100);
-  canvas.style.animationPlayState = 'running';
-  updatescore();
-});
-
-socket.on('hitted', () => {
-  sfx.hit.play();
-  syncEmit(() => {
+  socket.on('gameOver', () => {
+    sfx.die.play();
+    deaths++;
     canvas.classList = '';
-    // canvas.classList.remove('animhit');
     setTimeout(() => {
       canvas.classList.add('animhit')
     }, 100);
-
     canvas.style.animationPlayState = 'running';
-    updateHealth();
+    updatescore();
   });
-});
 
-socket.on('healthup', () => {
-  canvas.classList = '';
-  setTimeout(() => {
-    canvas.classList.add('animheal')
+  socket.on('hitted', () => {
+    sfx.hit.play();
+    syncEmit(() => {
+      canvas.classList = '';
+      // canvas.classList.remove('animhit');
+      setTimeout(() => {
+        canvas.classList.add('animhit')
+      }, 100);
+
+      canvas.style.animationPlayState = 'running';
+      updateHealth();
+    });
+  });
+
+  socket.on('healthup', () => {
+    canvas.classList = '';
+    setTimeout(() => {
+      canvas.classList.add('animheal')
+    }, 100);
+    canvas.style.animationPlayState = 'running';
+    syncEmit(() => {
+      updateHealth();
+    });
+  })
+
+  socket.on('frag', () => {
+    kills++;
+    updatescore();
+  });
+
+  socket.on('newMsg', data => {
+    chatField.textContent += data;
+  });
+
+  setInterval(() => {
+    pingStart = Date.now();
+    socket.emit('getMe');
   }, 100);
-  canvas.style.animationPlayState = 'running';
-  syncEmit(() => {
-    updateHealth();
-  });
-})
 
-socket.on('frag', () => {
-  kills++;
-  updatescore();
-});
+  syncEmit = (callback) => {
+    socket.emit('getMe');
+    awaitFunc = callback;
+  };
+}
 
-socket.on('newMsg', data => {
-  chatField.textContent += data;
-});
 
 //#endregion
 
@@ -394,11 +411,6 @@ const speedup = (val) => {
   syncEmit(() => {
     socket.emit('speedup', val);
   });
-};
-
-const syncEmit = (callback) => {
-  socket.emit('getMe');
-  awaitFunc = callback;
 };
 
 const interpolate = (start, end) => (
@@ -473,20 +485,20 @@ const calcCollisions = () => {
     const s = player.speed;
     const fdx = player.vector.x * player.speed;
     const fdy = player.vector.y * player.speed;
+
     if (player.x - player.size + fdx < x + wall.w && player.x + player.size + fdx > x &&
       player.y + player.size + fdy > y && player.y - player.size + fdy < y + wall.h) {
 
-      if (player.y + player.size > y && player.y - player.size < y + wall.h) {
-        player.vector.x = -player.vector.x;
-        // player.x += player.x - x < 0 ? -s - 1 : s + 1;
-        player.x += Math.sign(player.vector.x) * 3 * player.speed;
-        // player.x -= Math.sign(player.vector.x);
-      }
-      if (player.x + player.size > x && player.x - player.size < x + wall.w) {
-        player.vector.y = -player.vector.y;
-        // player.y += player.y - y < 0 ? -s - 1 : s + 1;
-        player.y += Math.sign(player.vector.y) * 5 * player.speed;
-        // player.y -= Math.sign(player.vector.y);
+      if (player.x > x && player.x < x + wall.w) {
+        if (player.y > y)
+          player.y = y + wall.h + player.size// + player.speed;
+        if (player.y < y)
+          player.y = y - player.size// - player.speed;
+      } else if (player.y > y && player.y < y + wall.h) {
+        if (player.x > x)
+          player.x = x + wall.w + player.size// + player.speed;
+        if (player.x < x)
+          player.x = x - player.size// - player.speed;
       }
 
       // syncEmit(() => {
@@ -502,8 +514,3 @@ const calcCollisions = () => {
   }
 
 };
-
-setInterval(() => {
-  pingStart = Date.now();
-  socket.emit('getMe');
-}, 100);

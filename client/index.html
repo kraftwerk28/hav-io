@@ -2,6 +2,7 @@
 <!-- <html lang="en"> -->
 
 <head>
+  <link rel="stylesheet" href="./style28.css">
   <link rel="stylesheet" href="./st.css">
   <!-- <meta charset="UTF-8"> -->
   <!-- <meta name="viewport" content="width=device-width, initial-scale=1.0"> -->
@@ -22,7 +23,7 @@
           <img class="heart" src="./img/heart.png" width="50" height="50">
         </div>
         <textarea id="chatField" class="textArea" style="width: 90%; max-height: 100%;" readonly></textarea>
-        <input id="chatInput" type="text" class="textField" style="width: 90%; height: 30px" placeholder="type here...">
+        <input id="chatInput" type="text" class="circle textField" style="width: 90%; height: 30px" placeholder="type here...">
       </td>
       <td>
         <canvas id="game"></canvas>
@@ -30,24 +31,24 @@
       <td id="right">
         <input id="nickname" type="text" maxlength="15" style="height: 30px; width: 290px;" class="textField" placeholder="your nickname">
         <br>
-        <button class="circleButton" style="width: 230px; height: 50px;" onclick="reload()">
+        <button class="circle circleButton" style="width: 230px; height: 50px;" onclick="reload()">
           Restart
-          <canvas class="circleCanvas"></canvas>
+          <canvas class="buttonCanv"></canvas>
         </button>
-        <button id="mute" class="circleButton" style="width: 50px; height: 50px; background-size: contain" onclick="mute()">
-          <canvas class="circleCanvas"></canvas>
+        <button id="mute" class="circle circleButton" style="width: 50px; height: 50px; background-size: contain" onclick="mute()">
+          <canvas class="buttonCanv"></canvas>
         </button>
         <br>
-        <textarea class="textArea" style="width: 290px; height: 150px" readonly>
+        <textarea class="circle textArea" style="width: 290px; height: 150px" readonly>
 left click: shoot
 right click: accelerate
 
 kill players to be coolest
 gl)
         </textarea>
-        <div class="textArea" style="width: 290px; height: 150px; background-color: palegreen">
+        <div class="circle textArea" style="width: 290px; height: 150px; background-color: palegreen; overflow: hidden">
           <div style="text-align: center; font-weight: bolder;">CONNECTED:</div>
-        <div id="connected" style="height: 90%; white-space: pre; overflow-y: scroll"></div>
+        <div id="connected" style="height: 90%; white-space: pre; overflow-y: scroll; overflow-x: hidden"></div>
         </div>
       </td>
     </tr>
