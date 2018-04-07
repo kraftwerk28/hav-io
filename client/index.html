@@ -22,20 +22,20 @@
           <img class="heart" src="./img/heart.png" width="50" height="50">
           <img class="heart" src="./img/heart.png" width="50" height="50">
         </div>
-        <textarea id="chatField" class="textArea" style="width: 90%; max-height: 100%;" readonly></textarea>
-        <input id="chatInput" type="text" class="circle textField" style="width: 90%; height: 30px" placeholder="type here...">
+        <textarea id="chatField" class="circle textArea" style="width: 90%; max-height: 100%; height: 300px; background-color: coral" readonly></textarea>
+        <input id="chatInput" class="circle inputText" type="text" class="circle textField" style="width: 90%; height: 30px" placeholder="type here...">
       </td>
       <td>
         <canvas id="game"></canvas>
       </td>
       <td id="right">
-        <input id="nickname" type="text" maxlength="15" style="height: 30px; width: 290px;" class="textField" placeholder="your nickname">
+        <input id="nickname" class="circle inputText" type="text" maxlength="15" style="height: 30px; width: 290px;" class="textField" placeholder="your nickname">
         <br>
         <button class="circle circleButton" style="width: 230px; height: 50px;" onclick="reload()">
           Restart
           <canvas class="buttonCanv"></canvas>
         </button>
-        <button id="mute" class="circle circleButton" style="width: 50px; height: 50px; background-size: contain" onclick="mute()">
+        <button id="mute" class="circle circleButton" style="width: 50px; height: 50px; min-width: 50px; background-size: contain" onclick="mute()">
           <canvas class="buttonCanv"></canvas>
         </button>
         <br>

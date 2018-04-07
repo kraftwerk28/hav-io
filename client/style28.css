@@ -1,58 +1,30 @@
-#game {
-  background-image: url('./img/floor.png');
-  margin: 10px;
-  box-shadow: 0px 0px 30px 2px grey;
-  border-radius: 10px;
-  animation-duration: 1s;
-}
-
-#chatButton {
-  transform: rotate(-90deg);
-  position: absolute;
-  width: 150px;
-  height: 40px;
-  left: -50px;
-  top: 200px;
-}
-
-#left {
-  position: relative;
-  text-align: right;
-}
-
-#right {
-  /* position: relative; */
-  text-align: left;
-}
-
 a {
   text-decoration-style: none;
   color: white;
   display: block;
   padding: 10px;
-  /* width: 100%;
-  height: 100%; */
 }
 
 .circle {
-  border-radius: 5px;
-  box-shadow: 0px 0px 20px 2px grey;
+  border-radius: 2px;
+  box-shadow: 0px 1px 3px grey;
   font-family: 'Consolas', 'Courier New', Courier, monospace;
   text-align: center;
   vertical-align: middle;
-  width: 100px;
+  min-width: 100px;
+  width: auto;
   height: 50px;
   outline: none;
   border: none;
-  padding: 10px;
+  padding-left: 10px;
+  padding-right: 10px;
   margin: 10px;
   transition-duration: 0.5s;
-  --cl: background-color;
 }
 
 .circle:hover {
   transition-duration: 0.2s;
-  box-shadow: 0px 0px 30px 5px grey;
+  box-shadow: 0px 4px 8px grey;
 }
 
 .buttonCanv {
@@ -62,6 +34,16 @@ a {
   left: 0px;
   width: 100%;
   height: 100%;
+}
+
+.buttonCanv:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  transition-duration: 0.5s;
+}
+
+.buttonCanv:active {
+  background-color: rgba(0, 0, 0, 0.1);
+  transition-duration: 0.5s;
 }
 
 .circleButton {
@@ -113,7 +95,6 @@ a {
 }
 
 .dropdownul li {
-  /* margin: 5px; */
   visibility: hidden;
   opacity: 0;
   max-height: 0px;
@@ -133,27 +114,113 @@ a {
 
 /* #region textfield*/
 
-.textField {
+.inputText {
+  width: auto;
+  /* padding: 0px; */
   border: 2px solid;
   border-color: mediumslateblue;
   text-align: left;
   font-size: x-large;
 }
 
-.textField:focus {
-  border-width: 0px;
+.inputText:focus {
+  box-shadow: 0px 4px 16px 4px grey;
+  border-color: transparent;
   transition-duration: 0.2s;
 }
 
 /* #endregion */
 
 .textArea {
+  /* min-height: 200px; */
+  /* height: fit-content; */
   background-color: greenyellow;
   text-align: initial;
   font-size: large;
   transition-duration: 0s;
-  resize: both;
+  resize: none;
   overflow: auto;
+}
+
+.inputCheckbox {
+  border-radius: 2px;
+  display: inline-block;
+  font-family: 'Consolas', 'Courier New', Courier, monospace;
+  outline: none;
+  border: none;
+  padding: 10px;
+  margin: 10px;
+  position: relative;
+  padding-left: 30px;
+  transition-duration: 0.5s;
+  user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -webkit-user-select: none;
+}
+
+.inputCheckbox input {
+  display: none;
+}
+
+@keyframes check {
+  0% {
+    border-radius: 2px;
+    background-color: transparent;
+  }
+  50% {
+    border-radius: 50%;
+    background-color: orange;
+  }
+  100% {
+    border-radius: 2px;
+    background-color: orange;
+  }
+}
+
+@keyframes uncheck {
+  0% {}
+  50% {
+    border-radius: 50%;
+    background-color: orange;
+  }
+  100% {
+    border-radius: 2px;
+    background-color: transparent;
+  }
+}
+
+.checkMark {
+  height: 20px;
+  width: 20px;
+  left: 0px;
+  top: 5px;
+  position: absolute;
+  border: 3px orange solid;
+  animation: uncheck 0.3s forwards;
+}
+
+.inputCheckbox input:checked~.checkMark {
+  animation: check 0.3s forwards;
+}
+
+.checkMark div {
+  opacity: 0;
+  width: 30%;
+  height: 60%;
+  transform: translate(6px, 0px);
+  border-width: 0px 3px 3px 0px;
+  border-color: white;
+  border-style: solid;
+  background-color: transparent;
+  transition-duration: 0.25s;
+}
+
+.inputCheckbox input:checked~.checkMark div {
+  opacity: 1;
+  transform: translate(6px, 0px) rotate(45deg);
+  transition-duration: 0.2s;
+  transition-delay: 0.2s;
 }
 
 ::-webkit-scrollbar-thumb {

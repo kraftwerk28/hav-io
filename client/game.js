@@ -155,6 +155,10 @@ canvas.onmouseleave = () => {
   rClick = false;
 }
 
+canvas.onmouseenter = () => {
+  canvOffset = canvas.getBoundingClientRect();
+}
+
 // canvas.oncontextmenu = () => false;
 
 canvas.onmousedown = (e) => {
