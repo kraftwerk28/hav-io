@@ -1,15 +1,12 @@
 'use strict';
 
-const os = require('os');
-const express = require('express');
-const app = express();
 const fs = require('fs');
 const http = require('http');
 const classes = require('./classes');
 const files = {};
 let messages = '';
+const port = 80;
 
-/*
 const readR = (root, path) => {
   const getFilenames = (path, prefix) => {
     if (fs.lstatSync(root + prefix + path).isDirectory()) {
@@ -28,20 +25,24 @@ const readR = (root, path) => {
 
   return flatty(getFilenames(path, ''));
 };
-*/
-// readR('client/', '').forEach(f => {
-//   const key = (f === '/index.html' ? '/' : f);
-//   files[key] = fs.readFileSync('./client/' + f);
-// });
 
-const server = http.createServer(app);
-
-app.use(express.static(__dirname + '/client/'));
-app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/client/index.html');
+readR('client/', '').forEach(f => {
+  const key = (f === '/index.html' ? '/' : f);
+  files[key] = fs.readFileSync('./client/' + f);
 });
 
-server.listen(80);
+const server = http.createServer((req, res) => {
+  const data = files[req.url] || files['/'];
+  res.writeHead(200);
+  res.end(data);
+});
+
+server.on('error', (err) => {
+  console.log('Error: ' + err.message);
+  process.exit(1);
+});
+
+server.listen(port);
 
 const io = require('socket.io')(server);
 
