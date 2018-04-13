@@ -1,3 +1,7 @@
+body {
+  font-family: 'Consolas', 'Courier New', Courier, monospace;
+}
+
 a {
   text-decoration-style: none;
   color: white;
@@ -9,6 +13,7 @@ a {
   border-radius: 2px;
   box-shadow: 0px 1px 3px grey;
   font-family: 'Consolas', 'Courier New', Courier, monospace;
+  /* font-family: 'Consolas', 'Courier New', Courier, monospace; */
   text-align: center;
   vertical-align: middle;
   min-width: 100px;

@@ -10,8 +10,6 @@
   "author": "kraftwerk28",
   "license": "MIT",
   "dependencies": {
-    "fs": "0.0.1-security",
-    "http": "0.0.0",
     "socket.io": "^2.0.4"
   }
 }

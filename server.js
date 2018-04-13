@@ -5,7 +5,7 @@ const http = require('http');
 const classes = require('./classes');
 const files = {};
 let messages = '';
-const port = 80;
+const port = 8080;
 
 const readR = (root, path) => {
   const getFilenames = (path, prefix) => {

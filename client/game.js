@@ -3,7 +3,7 @@
 let socket;
 let syncEmit = (callback) => { awaitFunc = callback };
 let player = {};
-let movevector = [0, 0];
+let movevector = { x: 0, y: 0 };
 let awaitFunc = null;
 let bulletClock;
 let canvOffset = {};
@@ -143,9 +143,11 @@ canvas.onmousemove = (e) => {
     x: vec[0] / l,
     y: vec[1] / l
   };
-  socket.emit('move', {
-    vector
-  });
+  movevector.x = vec[0] / l;
+  movevector.y = vec[1] / l;
+  // socket.emit('move', {
+  //   vector
+  // });
 };
 
 canvas.onmouseleave = () => {
@@ -386,7 +388,9 @@ const initSocket = () => {
   setInterval(() => {
     pingStart = Date.now();
     socket.emit('getMe');
-  }, 100);
+    socket.emit('move', { vector: movevector });
+    console.log('mv');
+  }, 50);
 
   syncEmit = (callback) => {
     socket.emit('getMe');
