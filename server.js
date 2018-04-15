@@ -2,11 +2,13 @@
 
 const fs = require('fs');
 const http = require('http');
+const WebSocket = require('websocket').server;
 const classes = require('./classes');
 const files = {};
 let messages = '';
 const port = 8080;
 
+//#region static routing and server init
 const readR = (root, path) => {
   const getFilenames = (path, prefix) => {
     if (fs.lstatSync(root + prefix + path).isDirectory()) {
@@ -34,7 +36,9 @@ readR('client/', '').forEach(f => {
 const server = http.createServer((req, res) => {
   const data = files[req.url] || files['/'];
   res.writeHead(200);
-  res.end(data);
+  // res.emit('init', );
+  res.write(data);
+  res.end();
 });
 
 server.on('error', (err) => {
@@ -42,47 +46,139 @@ server.on('error', (err) => {
   process.exit(1);
 });
 
-server.listen(port);
-
-const io = require('socket.io')(server);
+server.listen(port, () => { console.log(`Server listen on ${port}`) });
+//#endregion
 
 const rooms = [];
+const sockets = new Map();
 const maxPl = 5;
-const size = 1500;
-const wallCount = size / 20;
-const spawnCount = 6;
+const mapsize = 1500;
+const wallCount = mapsize / 20;
+const spawnerCount = 6;
+let plCount = -1;
 
-const canvas = {
-  width: 700,
-  height: 500
+const randomRange = (start, end) => {
+  return Math.floor(Math.random() * end + start)
 };
 
-const randomRange = (start, end) => (
-  Math.floor(Math.random() * end + start)
-);
-
-const createPlayer = (id) => {
+const createPlayer = () => {
   let p;
+  plCount++;
   if (rooms.length < 1) {
-    p = new classes.Player(id, 0);
-    rooms.push(new classes.Room(size, maxPl, p));
+    p = new classes.Player(plCount, 0);
+    rooms.push(new classes.Room(mapsize, maxPl, p));
     generateWalls(0);
     return p;
   }
 
   for (let i = 0; i < rooms.length; i++) {
     if (rooms[i].players.length < rooms[i].maxPlayers) {
-      p = new classes.Player(id, i);
+      p = new classes.Player(plCount, i);
       rooms[i].players.push(p);
       return p;
     }
   }
-  p = new classes.Player(id, rooms.length);
-  rooms.push(new classes.Room(size, maxPl, p));
+  p = new classes.Player(plCount, rooms.length);
+  rooms.push(new classes.Room(mapsize, maxPl, p));
   generateWalls(rooms.length);
   return p;
 };
 
+const createBot = () => {
+
+};
+
+const ws = new WebSocket({
+  httpServer: server,
+  autoAcceptConnections: false
+});
+
+ws.on('request', (req) => {
+  const socket = req.accept('', req.origin);
+  console.log(socket.remoteAddress + ' connected.');
+  let player = createPlayer(plCount);
+  respawn(player);
+
+  socket.id = plCount;
+  sockets.set(plCount, socket);
+  let room = rooms[player.roomId];
+
+  const processIncome = (data) => {
+    // perform moving
+    if (data.length < 1) return;
+    player.vector[0] = data[0];
+    player.vector[1] = data[1];
+    console.log(data)
+    // perform shooting
+    if (data[2])
+      if (player.speed <= 1)
+        player.bullets.push({
+          x: player.x,
+          y: player.y,
+          vector: [player.vector[0], player.vector[1]]
+        });
+    // perform speedup
+    player.speed = data[3] ? 4 : 1;
+    // send full player info if needed
+    if (data[4]) socket.sendUTF(JSON.stringify(player));
+    // perform messenger
+    if (data[5]) { }
+  };
+
+  socket.on('message', (event) => {
+    processIncome(JSON.parse(event.utf8Data));
+  });
+
+  socket.on('close', (code, desc) => {
+    // plCount--;
+    const i = room.players.findIndex(p => p.id === player.id);
+    sockets.delete(player.id);
+    // sockets.splice(sockets.findIndex(s => s.id === socket.id), 1);
+    room.players.splice(i, 1);
+    if (room.players.length < 1)
+      rooms.splice(player.roomId, 1);
+    console.log(socket.remoteAddress + ' disconnected.');
+  });
+});
+
+/* -----MAIN SERVER CLOCK----- */
+
+const updatePlayer = (player) => {
+  player.x += player.vector[0] * player.speed;
+  player.y += player.vector[1] * player.speed;
+  player.bullets.forEach((b) => {
+    b.x += b.vector[0] * 10;
+    b.y += b.vector[1] * 10;
+  });
+};
+
+setInterval(() => {
+  // const data = [];
+  // console.log(rooms.map(r => r.players));
+  rooms.forEach((room) => {
+    room.players.forEach(player => {
+      updatePlayer(player);
+      sockets.get(player.id).send(JSON.stringify([
+        room.players.map((pl) => [
+          pl.x, pl.y, pl.vector[0], pl.vector[1], Number(player.id === pl.id),
+          pl.health, pl.speed, Number(pl.vulnerable),
+          pl.bullets.map((bull) => [bull.x, bull.y])
+        ]),
+        room.powerups.map((pu) => [pu.x, pu.y])
+      ]));
+    });
+  });
+
+}, 1000 / 50);
+
+
+
+
+
+
+
+// FUCKIN SUCKET.IO SHIT
+/*
 io.sockets.on('connection', (socket) => {
   console.log(socket.id + ' connected.')
   let player = createPlayer(socket.id);
@@ -104,7 +200,7 @@ io.sockets.on('connection', (socket) => {
     player,
     room,
     messages,
-    size
+    mapsize
   });
   setTimeout(() => {
     player.vulnerable = true;
@@ -150,23 +246,7 @@ io.sockets.on('connection', (socket) => {
   });
 
   socket.on('pickupPowerup', data => {
-    switch (room.powerups.splice(data, 1)[0].type) {
-      case 'shield':
-        player.vulnerable = false;
-        setTimeout(() => {
-          player.vulnerable = true;
-        }, 5000);
-        break;
-      case 'heart':
-        if (player.health < 3) {
-          player.health++;
-          socket.emit('healthup');
-        }
-        break;
-    }
-    room.players.forEach(p => {
-      io.sockets.connected[p.id].emit('updatePowerups', room.powerups);
-    });
+
 
 
   });
@@ -206,6 +286,10 @@ io.sockets.on('connection', (socket) => {
 
 });
 
+
+
+/* -----MAIN SERVER CLOCK----- */
+/*
 setInterval(() => { // sever clock
 
   rooms.forEach(room => {
@@ -214,9 +298,9 @@ setInterval(() => { // sever clock
       player.x += player.vector.x * player.speed;
       player.y += player.vector.y * player.speed;
 
-      if (player.x - player.size < 0 || player.x + player.size > size)
+      if (player.x - player.mapsize < 0 || player.x + player.mapsize > mapsize)
         player.vector.x = -player.vector.x;
-      if (player.y - player.size < 0 || player.y + player.size > size)
+      if (player.y - player.mapsize < 0 || player.y + player.mapsize > mapsize)
         player.vector.y = -player.vector.y;
 
       if (player.bullets.length > 0)
@@ -227,7 +311,7 @@ setInterval(() => { // sever clock
 
           room.players.forEach(p => {
             if (player.id !== p.id && p.vulnerable)
-              if (distanse(b.x, b.y, p.x, p.y) < p.size) {
+              if (distanse(b.x, b.y, p.x, p.y) < p.mapsize) {
                 player.bullets.splice(i, 1);
                 io.sockets.connected[p.id].emit('hitted');
                 p.health--;
@@ -242,7 +326,7 @@ setInterval(() => { // sever clock
 
           });
 
-          if (b.x < 0 || b.x > size || b.y < 0 || b.y > size) {
+          if (b.x < 0 || b.x > mapsize || b.y < 0 || b.y > mapsize) {
             player.bullets.splice(i, 1);
           }
         }
@@ -259,7 +343,7 @@ setInterval(() => { // sever clock
 
   // io.sockets.emit('update', { players });
 }, 1000 / 50);
-
+*/
 setInterval(() => {
   if (Math.random() < 0.3) {
     spawnPowerup();
@@ -267,23 +351,20 @@ setInterval(() => {
 }, 5000);
 
 const respawn = (player) => {
-  player.x = rooms[player.roomId].spawnpoints[randomRange(0, spawnCount)].x;
-  player.y = rooms[player.roomId].spawnpoints[randomRange(0, spawnCount)].y;
-  player.vector = {
-    x: 0,
-    y: 0
-  };
+  player.x = rooms[player.roomId].spawnpoints[randomRange(0, spawnerCount)].x;
+  player.y = rooms[player.roomId].spawnpoints[randomRange(0, spawnerCount)].y;
+  player.vector = [0, 0];
   // player.deaths++;
 
-  if (player.id in io.sockets.connected) {
+  if (sockets.has(player.id)) {
     player.vulnerable = false;
     player.health = 3;
-    io.sockets.connected[player.id].emit('updatePlayer', player);
+    // io.sockets.connected[player.id].emit('updatePlayer', player);
     setTimeout(() => {
       // console.log('unshield' + player.id);
-      if (player.id in io.sockets.connected) {
+      if (sockets.has(player.id)) {
         player.vulnerable = true;
-        io.sockets.connected[player.id].emit('updatePlayer', player);
+        // io.sockets.connected[player.id].emit('updatePlayer', player);
       }
     }, 2000);
   }
@@ -297,11 +378,11 @@ const distanse = (x1, y1, x2, y2) => (
 
 const generateWalls = (ind) => {
   for (let i = 0; i < wallCount; i++) {
-    rooms[ind].walls.push(new classes.Wall(randomRange(0, size / 50), randomRange(0, size / 50), 50, 50));
+    rooms[ind].walls.push(new classes.Wall(randomRange(0, mapsize / 50), randomRange(0, mapsize / 50), 50, 50));
   }
-  for (let i = 0; i < spawnCount; i++) {
-    const x = randomRange(0, size / 50);
-    const y = randomRange(0, size / 50);
+  for (let i = 0; i < spawnerCount; i++) {
+    const x = randomRange(0, mapsize / 50);
+    const y = randomRange(0, mapsize / 50);
     if (rooms[ind].walls.every(wall => (wall.x !== x) && (wall.y !== y)))
       rooms[ind].spawnpoints.push({
         x: x * 50 + 25,
@@ -335,11 +416,11 @@ const spawnPowerup = () => {
       };
       return false;
     }
-    pu = new classes.Powerup(randomRange(0, size / 50), randomRange(0, size / 50), type);
+    pu = new classes.Powerup(randomRange(0, mapsize / 50), randomRange(0, mapsize / 50), type);
     if (!collides(pu))
       rooms[id].powerups.push(pu);
     rooms[id].players.forEach(p => {
-      io.sockets.connected[p.id].emit('updatePowerups', powerups);
+      // io.sockets.connected[p.id].emit('updatePowerups', powerups);
     })
   }
 };

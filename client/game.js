@@ -1,8 +1,26 @@
 'use strict';
 
-let socket;
+const testing = true;
+const socket = new WebSocket(testing ? 'ws://127.0.0.1:8080/' :
+  'ws://kraftwerk28.pp.ua/');
+
 let syncEmit = (callback) => { awaitFunc = callback };
-let player = {};
+let player = {
+  x: 0,
+  y: 0,
+  vector: [0, 0],
+  speed: 0,
+  size: 10,
+  id: 0,
+  bullets: [],
+  vulnerable: false,
+  health: 3,
+  collides: false,
+};
+const serialize = () => {
+
+};
+
 let movevector = { x: 0, y: 0 };
 let awaitFunc = null;
 let bulletClock;
@@ -50,7 +68,7 @@ window.onload = () => {
   if (n)
     syncEmit(() => {
       player.nickname = n;
-      socket.emit('updateMe', player);
+      // socket.emit('updateMe', player);
       nicknameinput.value = n;
     });
 
@@ -59,8 +77,8 @@ window.onload = () => {
     cx: Math.floor(canvas.width / 2),
     cy: Math.floor(canvas.height / 2)
   };
-  socket = io();
-  initSocket();
+  // socket = io();
+  // initSocket();
   canvOffset = canvas.getBoundingClientRect();
 };
 
@@ -79,7 +97,7 @@ window.onscroll = () => {
   canvOffset = canvas.getBoundingClientRect();
 };
 
-//#region audio
+//#region frontend
 const sfx = {
   die: new Audio('./sfx/Death.wav'),
   shoot: new Audio('./sfx/Shoot.wav'),
@@ -91,9 +109,7 @@ const sfx = {
 }
 sfx.soundtrack.loop = true;
 sfx.soundtrack.volume = 0.5;
-//#endregion
 
-//#region html
 const heartContainer = document.getElementById('heartContainer');
 
 const chatField = document.getElementById('chatField');
@@ -106,18 +122,17 @@ nicknameinput.oninput = (e) => {
   localStorage.setItem('havionick', nicknameinput.value);
   syncEmit(() => {
     player.nickname = nicknameinput.value;
-    socket.emit('updateMe', player);
-    socket.emit('updateConnected');
+    // socket.send
   });
 };
 chatInput.onkeydown = (e) => {
   const str = clearSpaces(chatInput.value);
   if (e.keyCode === 13 && str.length > 0) {
     e.preventDefault();
-    socket.emit('newMsg', {
-      player,
-      msg: str
-    });
+    // socket.emit('newMsg', {
+    //   player,
+    //   msg: str
+    // });
     chatInput.value = '';
   }
 };
@@ -128,7 +143,6 @@ const ctx = canvas.getContext('2d');
 ctx.imageSmoothingEnabled = false;
 canvas.width = 700;
 canvas.height = 500;
-// ctx.fillStyle = 'lime';
 ctx.strokeStyle = 'yellow';
 ctx.font = '12px Consolas';
 ctx.textAlign = 'center';
@@ -139,15 +153,8 @@ canvas.onmousemove = (e) => {
   const y = e.y - canvOffset.y;
   const vec = [x - player.x + viewport.x, y - player.y + viewport.y];
   const l = Math.sqrt(Math.pow(vec[0], 2) + Math.pow(vec[1], 2));
-  const vector = {
-    x: vec[0] / l,
-    y: vec[1] / l
-  };
-  movevector.x = vec[0] / l;
-  movevector.y = vec[1] / l;
-  // socket.emit('move', {
-  //   vector
-  // });
+  console.log([...vec.map(v => v / l)]);
+  socket.send(JSON.stringify([...vec.map(v => v / l), 0, player.speed, 0, '']));
 };
 
 canvas.onmouseleave = () => {
@@ -189,9 +196,7 @@ canvas.onmouseup = (e) => {
     speedup(false);
   }
 }
-//#endregion
 
-//#region images
 const wallimg = new Image();
 wallimg.src = './img/brick.png';
 // wallimg.style = 'image-rendering: pixelated';
@@ -201,11 +206,130 @@ const heart_img = new Image();
 heart_img.src = './img/heart_powerup.png';
 //#endregion
 
-//#region socket.on
+//#region socket
+const updatePlayer = (data) => {
+  const info = data[0].find((pl) => pl[4] === 1);
+  player.x = info[0];
+  player.y = info[1];
+  player.vector[0] = info[2];
+  player.vector[1] = info[3];
+};
+
+const render = (data) => {
+  ctx.clearRect(0, 0, 700, 500);
+  // console.log(data);
+  viewport.center(player.x, player.y);
+
+  canvas.style.backgroundPosition = `${-viewport.x}px ${-viewport.y}px`;
+
+  data[0].forEach(p => {
+    const size = 10;
+    const x = Math.round(p[0]) - viewport.x;
+    const y = Math.round(p[1]) - viewport.y;
+    console.log(x, y);
+    const grad = ctx.createRadialGradient(x, y, 0, x, y, size * 4);
+    grad.addColorStop(0, 'white');
+    grad.addColorStop(1, 'transparent');
+    const angle = Math.atan2(p[3], p[2]);
+
+
+    ctx.fillStyle = grad;
+
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.arc(x, y, size * 4, angle - (Math.PI / 4), angle + (Math.PI / 4));
+    ctx.lineTo(x, y);
+    ctx.fill();
+
+    if (p[6] < 2)
+      switch (p[5]) {
+        case 3:
+          ctx.fillStyle = 'lime';
+          break;
+        case 2:
+          ctx.fillStyle = 'yellow';
+          break;
+        case 1:
+          ctx.fillStyle = 'red';
+          break;
+      }
+    else
+      ctx.fillStyle = 'white';
+    ctx.beginPath();
+    ctx.arc(x, y, size, 0, Math.PI * 2);
+    ctx.fill();
+    if (data[4]) {
+      const mygrad = ctx.createRadialGradient(x, y, 0, x, y, size * 3);
+      mygrad.addColorStop(0, ctx.fillStyle);
+      mygrad.addColorStop(1, 'transparent');
+      ctx.fillStyle = mygrad;
+      ctx.beginPath();
+      ctx.arc(x, y, size * 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // if (p.nickname) {
+    //   ctx.strokeText(p.nickname, x, y - 15);
+    // }
+    ctx.fillStyle = 'red';
+    p[8].forEach(b => {
+      ctx.fillRect(b[0] - viewport.x - 2, b[1] - viewport.y - 2, 4, 4);
+    });
+    if (!p[7]) {
+      const grad = ctx.createRadialGradient(x, y, 0, x, y, size * 3);
+      grad.addColorStop(1, 'chartreuse');
+      grad.addColorStop(0.5, 'transparent');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(x, y, size * 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  });
+
+  // ctx.fillStyle = ctx.createPattern(wallimg, 'repeat');
+
+  // walls.forEach(wall => {
+  //   ctx.drawImage(wallimg, 50 * wall.x - viewport.x, 50 * wall.y - viewport.y);
+  // });
+
+  // calcCollisions();
+  /*
+  powerups.forEach((pu, i) => {
+    const x = pu.x * 50;
+    const y = pu.y * 50;
+    const lowb = 15;
+    const topb = 35;
+    if (pu.type === 'shield')
+      ctx.drawImage(shield_img, x - viewport.x, y - viewport.y);
+    else if (pu.type === 'heart')
+      ctx.drawImage(heart_img, x - viewport.x, y - viewport.y);
+    if (player.x > x + lowb && player.x < x + topb && player.y > y + lowb && player.y < y + topb) {
+      powerups.splice(i, 1);
+      if (pu.type === 'heart')
+        sfx.heartPick.play();
+      else if (pu.type === 'shield')
+        sfx.shieldPick.play();
+      socket.emit('pickupPowerup', i);
+    }
+  });
+  */
+};
+
+socket.onmessage = (ev) => {
+  const data = JSON.parse(ev.data);
+  updatePlayer(data);
+  render(data);
+};
+
+socket.onclose = (event) => {
+  console.log('Connection closed. Code: ' + event.code)
+};
+//#endregion
+
 const initSocket = () => {
   socket.on('welcome', data => {
     player = data.player;
-    document.getElementById('hav-io').textContent = `hav-io   room id: ${player.roomId}`
+    document.getElementById('hav-io').textContent = `hav-io   room id: ${player.roomId}`;
     walls = data.room.walls;
     powerups = data.room.powerups;
     size = data.size
@@ -218,100 +342,7 @@ const initSocket = () => {
   });
 
   socket.on('update', data => {
-    ctx.clearRect(0, 0, 700, 500);
 
-    // viewport.center(player.x, player.y);
-
-    canvas.style.backgroundPosition = `${-viewport.x}px ${-viewport.y}px`;
-
-    data.players.forEach(p => {
-      const x = Math.round(p.x) - viewport.x;
-      const y = Math.round(p.y) - viewport.y;
-      const grad = ctx.createRadialGradient(x, y, 0, x, y, p.size * 4);
-      grad.addColorStop(0, 'white');
-      grad.addColorStop(1, 'transparent');
-      const angle = Math.atan2(p.vector.y, p.vector.x);
-
-
-      ctx.fillStyle = grad;
-
-      ctx.beginPath();
-      ctx.moveTo(x, y);
-      ctx.arc(x, y, p.size * 4, angle - (Math.PI / 4), angle + (Math.PI / 4));
-      ctx.lineTo(x, y);
-      ctx.fill();
-
-      if (p.speed <= 1)
-        switch (p.health) {
-          case 3:
-            ctx.fillStyle = 'lime';
-            break;
-          case 2:
-            ctx.fillStyle = 'yellow';
-            break;
-          case 1:
-            ctx.fillStyle = 'red';
-            break;
-        }
-      else
-        ctx.fillStyle = 'white';
-      ctx.beginPath();
-      ctx.arc(x, y, player.size, 0, Math.PI * 2);
-      ctx.fill();
-      if (player.id === p.id) {
-        const mygrad = ctx.createRadialGradient(x, y, 0, x, y, player.size * 3);
-        mygrad.addColorStop(0, ctx.fillStyle);
-        mygrad.addColorStop(1, 'transparent');
-        ctx.fillStyle = mygrad;
-        ctx.beginPath();
-        ctx.arc(x, y, player.size * 3, 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      if (p.nickname) {
-        ctx.strokeText(p.nickname, x, y - 15);
-      }
-      ctx.fillStyle = 'red';
-      p.bullets.forEach(b => {
-        ctx.fillRect(b.x - viewport.x - 2, b.y - viewport.y - 2, 4, 4);
-      })
-      if (!p.vulnerable) {
-        const grad = ctx.createRadialGradient(x, y, 0, x, y, p.size * 3);
-        grad.addColorStop(1, 'chartreuse');
-        grad.addColorStop(0.5, 'transparent');
-        ctx.fillStyle = grad;
-        ctx.beginPath();
-        ctx.arc(x, y, p.size * 3, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    });
-
-    ctx.fillStyle = ctx.createPattern(wallimg, 'repeat');
-
-    walls.forEach(wall => {
-      ctx.drawImage(wallimg, 50 * wall.x - viewport.x, 50 * wall.y - viewport.y);
-    });
-
-    // calcCollisions();
-
-    powerups.forEach((pu, i) => {
-      const x = pu.x * 50;
-      const y = pu.y * 50;
-      const lowb = 15;
-      const topb = 35;
-      if (pu.type === 'shield')
-        ctx.drawImage(shield_img, x - viewport.x, y - viewport.y);
-      else if (pu.type === 'heart')
-        ctx.drawImage(heart_img, x - viewport.x, y - viewport.y);
-      if (player.x > x + lowb && player.x < x + topb && player.y > y + lowb && player.y < y + topb) {
-        powerups.splice(i, 1);
-        if (pu.type === 'heart')
-          sfx.heartPick.play();
-        else if (pu.type === 'shield')
-          sfx.shieldPick.play();
-        socket.emit('pickupPowerup', i);
-      }
-    });
   });
 
   socket.on('updatePlayer', data => {
@@ -396,16 +427,14 @@ const initSocket = () => {
     socket.emit('getMe');
     awaitFunc = callback;
   };
-}
+};
 
 
-//#endregion
 
 const shoot = () => {
   sfx.shoot.play();
-  syncEmit(() => {
-    socket.emit('shoot');
-  });
+  socket.send(JSON.stringify([player.vector[0], player.vector[1],
+    1, 0, '']));
 };
 
 const speedup = (val) => {
@@ -415,10 +444,9 @@ const speedup = (val) => {
     sfx.speedup.pause();
     sfx.speedup.currentTime = 0;
   }
-
-  syncEmit(() => {
-    socket.emit('speedup', val);
-  });
+  player.speed = Number(val);
+  socket.send(JSON.stringify([player.vector[0], player.vector[1], 0,
+  player.speed, 0, '']));
 };
 
 const interpolate = (start, end) => (
@@ -522,3 +550,5 @@ const calcCollisions = () => {
   }
 
 };
+
+if (testing) mute();

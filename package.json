@@ -1,7 +1,6 @@
 {
   "name": "havio",
   "version": "1.0.0",
-  "description": "",
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -10,6 +9,16 @@
   "author": "kraftwerk28",
   "license": "MIT",
   "dependencies": {
-    "socket.io": "^2.0.4"
-  }
+    "socket.io": "^2.1.0",
+    "websocket": "^1.0.25"
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kraftwerk28/hav-io.git"
+  },
+  "bugs": {
+    "url": "https://github.com/kraftwerk28/hav-io/issues"
+  },
+  "description": ""
 }
