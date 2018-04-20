@@ -8,6 +8,8 @@ const files = {};
 let messages = '';
 const port = 8080;
 
+let startUsage = process.cpuUsage();
+
 //#region static routing and server init
 const readR = (root, path) => {
   const getFilenames = (path, prefix) => {
@@ -53,6 +55,23 @@ server.on('error', (err) => {
 
 server.listen(port, () => { console.log(`Server listen on ${port}`) });
 //#endregion
+
+const getUsage = (value) => {
+  let cnt = Math.round(value / 10000);
+  let res = '';
+  while (cnt > 0) {
+    res += '|';
+    cnt--;
+  }
+  return res;
+};
+
+setInterval(() => {
+  startUsage = process.cpuUsage(startUsage)
+  process.stdout.clearLine();
+  process.stdout.cursorTo(0);
+  process.stdout.write(getUsage(startUsage.user));
+}, 1000)
 
 const rooms = [];
 const sockets = new Map();
@@ -144,6 +163,7 @@ ws.on('request', (req) => {
     if (room.players.length < 1)
       rooms.splice(player.roomId, 1);
     console.log(socket.remoteAddress + ' disconnected.');
+    socket.close();
   });
 });
 
