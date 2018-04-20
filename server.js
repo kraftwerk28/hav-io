@@ -33,12 +33,17 @@ readR('client/', '').forEach(f => {
   files[key] = fs.readFileSync('./client/' + f);
 });
 
+const route = (url) => {
+  if (url === '/') return './client/index.html';
+  return './client' + url;
+};
+
 const server = http.createServer((req, res) => {
-  const data = files[req.url] || files['/'];
+  // const data = files[req.url] || files['/'];
   res.writeHead(200);
   // res.emit('init', );
-  res.write(data);
-  res.end();
+  fs.readFile(route(req.url), (err, data) => { res.end(data) });
+  // res.end();
 });
 
 server.on('error', (err) => {
@@ -98,19 +103,19 @@ ws.on('request', (req) => {
   console.log(socket.remoteAddress + ' connected.');
   let player = createPlayer(plCount);
   respawn(player);
-
   socket.id = plCount;
   sockets.set(plCount, socket);
   let room = rooms[player.roomId];
 
   const processIncome = (data) => {
-    // perform moving
     if (data.length < 1) return;
-    player.vector[0] = data[0];
-    player.vector[1] = data[1];
-    console.log(data)
+    // perform moving
+    if (data.vec) {
+      player.vector = data.vec;
+    }
+
     // perform shooting
-    if (data[2])
+    if (data.shoot)
       if (player.speed <= 1)
         player.bullets.push({
           x: player.x,
@@ -118,11 +123,12 @@ ws.on('request', (req) => {
           vector: [player.vector[0], player.vector[1]]
         });
     // perform speedup
-    player.speed = data[3] ? 4 : 1;
+    if (data.speedup !== undefined)
+      player.speed = data.speedup ? 4 : 1;
     // send full player info if needed
-    if (data[4]) socket.sendUTF(JSON.stringify(player));
+    // if (data[4]) socket.sendUTF(JSON.stringify(player));
     // perform messenger
-    if (data[5]) { }
+    // if (data[5]) { }
   };
 
   socket.on('message', (event) => {
@@ -156,16 +162,29 @@ setInterval(() => {
   // const data = [];
   // console.log(rooms.map(r => r.players));
   rooms.forEach((room) => {
-    room.players.forEach(player => {
+    room.players.forEach((player, index) => {
+      // console.log(player);
       updatePlayer(player);
-      sockets.get(player.id).send(JSON.stringify([
-        room.players.map((pl) => [
-          pl.x, pl.y, pl.vector[0], pl.vector[1], Number(player.id === pl.id),
-          pl.health, pl.speed, Number(pl.vulnerable),
-          pl.bullets.map((bull) => [bull.x, bull.y])
+      sockets.get(player.id).send(JSON.stringify({
+        p: room.players.map(pl => [
+          Math.round(pl.x),
+          Math.round(pl.y),
+          Math.round(Math.atan2(pl.vector[1], pl.vector[0]) * 100) / 100,
+          pl.health,
+          pl.speed,
+          Number(pl.vulnerable),
+          pl.bullets.map(b => [b.x, b.y])
         ]),
-        room.powerups.map((pu) => [pu.x, pu.y])
-      ]));
+        id: index
+      }));
+      // sockets.get(player.id).send(JSON.stringify([
+      //   room.players.map((pl) => [
+      //     pl.x, pl.y, pl.vector[0], pl.vector[1], Number(player.id === pl.id),
+      //     pl.health, pl.speed, Number(pl.vulnerable),
+      //     pl.bullets.map((bull) => [bull.x, bull.y])
+      //   ]),
+      //   room.powerups.map((pu) => [pu.x, pu.y])
+      // ]));
     });
   });
 

@@ -152,9 +152,14 @@ canvas.onmousemove = (e) => {
   const x = e.x - canvOffset.x;
   const y = e.y - canvOffset.y;
   const vec = [x - player.x + viewport.x, y - player.y + viewport.y];
+  // console.log(vec);
+  // ctx.strokeStyle = 'red';
+  // ctx.moveTo(viewport.w / 2, viewport.h / 2);
+  // ctx.lineTo(x, y);
+  // ctx.stroke();
   const l = Math.sqrt(Math.pow(vec[0], 2) + Math.pow(vec[1], 2));
-  console.log([...vec.map(v => v / l)]);
-  socket.send(JSON.stringify([...vec.map(v => v / l), 0, player.speed, 0, '']));
+  // console.log([...vec.map(v => v / l)]);
+  socket.send(JSON.stringify({ vec: [...vec.map(v => v / l)] }));
 };
 
 canvas.onmouseleave = () => {
@@ -208,29 +213,28 @@ heart_img.src = './img/heart_powerup.png';
 
 //#region socket
 const updatePlayer = (data) => {
-  const info = data[0].find((pl) => pl[4] === 1);
-  player.x = info[0];
-  player.y = info[1];
-  player.vector[0] = info[2];
-  player.vector[1] = info[3];
+  // const info = data[0].find((pl) => pl[4] === 1);
+  player.x = data[0];
+  player.y = data[1];
+  player.vector[0] = data[2];
+  player.vector[1] = data[3];
 };
 
 const render = (data) => {
   ctx.clearRect(0, 0, 700, 500);
   // console.log(data);
-  viewport.center(player.x, player.y);
+  // viewport.center(player.x, player.y);
 
   canvas.style.backgroundPosition = `${-viewport.x}px ${-viewport.y}px`;
 
-  data[0].forEach(p => {
+  data.p.forEach(p => {
     const size = 10;
     const x = Math.round(p[0]) - viewport.x;
     const y = Math.round(p[1]) - viewport.y;
-    console.log(x, y);
     const grad = ctx.createRadialGradient(x, y, 0, x, y, size * 4);
     grad.addColorStop(0, 'white');
     grad.addColorStop(1, 'transparent');
-    const angle = Math.atan2(p[3], p[2]);
+    const angle = p[2];
 
 
     ctx.fillStyle = grad;
@@ -241,8 +245,8 @@ const render = (data) => {
     ctx.lineTo(x, y);
     ctx.fill();
 
-    if (p[6] < 2)
-      switch (p[5]) {
+    if (p[4] < 2)
+      switch (p[3]) {
         case 3:
           ctx.fillStyle = 'lime';
           break;
@@ -258,24 +262,15 @@ const render = (data) => {
     ctx.beginPath();
     ctx.arc(x, y, size, 0, Math.PI * 2);
     ctx.fill();
-    if (data[4]) {
-      const mygrad = ctx.createRadialGradient(x, y, 0, x, y, size * 3);
-      mygrad.addColorStop(0, ctx.fillStyle);
-      mygrad.addColorStop(1, 'transparent');
-      ctx.fillStyle = mygrad;
-      ctx.beginPath();
-      ctx.arc(x, y, size * 3, 0, Math.PI * 2);
-      ctx.fill();
-    }
 
     // if (p.nickname) {
     //   ctx.strokeText(p.nickname, x, y - 15);
     // }
     ctx.fillStyle = 'red';
-    p[8].forEach(b => {
+    p[6].forEach(b => {
       ctx.fillRect(b[0] - viewport.x - 2, b[1] - viewport.y - 2, 4, 4);
     });
-    if (!p[7]) {
+    if (!p[5]) {
       const grad = ctx.createRadialGradient(x, y, 0, x, y, size * 3);
       grad.addColorStop(1, 'chartreuse');
       grad.addColorStop(0.5, 'transparent');
@@ -285,6 +280,37 @@ const render = (data) => {
       ctx.fill();
     }
   });
+
+  if (true) {
+    const size = 10;
+    let pColor = '';
+    if (data.p[data.id][4] < 2)
+      switch (data.p[data.id][3]) {
+        case 3:
+          ctx.fillStyle = 'lime';
+          break;
+        case 2:
+          ctx.fillStyle = 'yellow';
+          break;
+        case 1:
+          ctx.fillStyle = 'red';
+          break;
+      }
+    else
+      ctx.fillStyle = 'white';
+    let x = data.p[data.id][0];
+    let y = data.p[data.id][1];
+    viewport.center(x, y);
+    x -= viewport.x;
+    y -= viewport.y;
+    const mygrad = ctx.createRadialGradient(x, y, 0, x, y, size * 3);
+    mygrad.addColorStop(0, ctx.fillStyle);
+    mygrad.addColorStop(1, 'transparent');
+    ctx.fillStyle = mygrad;
+    ctx.beginPath();
+    ctx.arc(x, y, size * 3, 0, Math.PI * 2);
+    ctx.fill();
+  }
 
   // ctx.fillStyle = ctx.createPattern(wallimg, 'repeat');
 
@@ -317,7 +343,7 @@ const render = (data) => {
 
 socket.onmessage = (ev) => {
   const data = JSON.parse(ev.data);
-  updatePlayer(data);
+  updatePlayer(data.p[data.id]);
   render(data);
 };
 
@@ -430,11 +456,9 @@ const initSocket = () => {
 };
 
 
-
 const shoot = () => {
   sfx.shoot.play();
-  socket.send(JSON.stringify([player.vector[0], player.vector[1],
-    1, 0, '']));
+  socket.send('{"shoot":1}');
 };
 
 const speedup = (val) => {
@@ -445,8 +469,7 @@ const speedup = (val) => {
     sfx.speedup.currentTime = 0;
   }
   player.speed = Number(val);
-  socket.send(JSON.stringify([player.vector[0], player.vector[1], 0,
-  player.speed, 0, '']));
+  socket.send(JSON.stringify({ speedup: val }));
 };
 
 const interpolate = (start, end) => (
