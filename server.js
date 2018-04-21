@@ -5,7 +5,7 @@ const http = require('http');
 const WebSocket = require('websocket').server;
 const classes = require('./classes');
 const files = {};
-let messages = '';
+// let messages = '';
 const port = 8080;
 
 let startUsage = process.cpuUsage();
@@ -31,21 +31,21 @@ const readR = (root, path) => {
 };
 
 readR('client/', '').forEach(f => {
-  const key = (f === '/index.html' ? '/' : f);
+  const key = (f === '/welcome.html' ? '/' : f);
   files[key] = fs.readFileSync('./client/' + f);
 });
 
 const route = (url) => {
-  if (url === '/') return './client/index.html';
+  if (url === '/') return './client/welcome.html';
+  if (url.startsWith('/auth')) return './client/index.html';
   return './client' + url;
 };
 
 const server = http.createServer((req, res) => {
   // const data = files[req.url] || files['/'];
   res.writeHead(200);
-  // res.emit('init', );
   fs.readFile(route(req.url), (err, data) => { res.end(data) });
-  // res.end();
+  // res.end(data);
 });
 
 server.on('error', (err) => {
@@ -66,12 +66,12 @@ const getUsage = (value) => {
   return res;
 };
 
-setInterval(() => {
-  startUsage = process.cpuUsage(startUsage)
-  process.stdout.clearLine();
-  process.stdout.cursorTo(0);
-  process.stdout.write(getUsage(startUsage.user));
-}, 1000)
+// setInterval(() => {
+//   startUsage = process.cpuUsage(startUsage)
+//   process.stdout.clearLine();
+//   process.stdout.cursorTo(0);
+//   process.stdout.write(getUsage(startUsage.user));
+// }, 1000)
 
 const rooms = [];
 const sockets = new Map();
@@ -83,6 +83,10 @@ let plCount = -1;
 
 const randomRange = (start, end) => {
   return Math.floor(Math.random() * end + start)
+};
+
+const distance = (x1, y1, x2, y2) => {
+  return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2))
 };
 
 const createPlayer = () => {
@@ -114,20 +118,28 @@ const createBot = () => {
 
 const ws = new WebSocket({
   httpServer: server,
-  autoAcceptConnections: false
+  autoAcceptConnections: false,
+  keepalive: true,
+  closeTimeout: 0
 });
 
 ws.on('request', (req) => {
   const socket = req.accept('', req.origin);
   console.log(socket.remoteAddress + ' connected.');
   let player = createPlayer(plCount);
-  respawn(player);
-  socket.id = plCount;
+  console.log('player created...');
   sockets.set(plCount, socket);
+  console.log('socket set');
+  respawn(player);
+  console.log('player respawned');
+  socket.id = plCount;
   let room = rooms[player.roomId];
 
+  setTimeout(() => {
+    socket.send(JSON.stringify({ walls: room.walls, powerups: room.powerups }));
+  }, 200);
+
   const processIncome = (data) => {
-    if (data.length < 1) return;
     // perform moving
     if (data.vec) {
       player.vector = data.vec;
@@ -162,20 +174,118 @@ ws.on('request', (req) => {
     room.players.splice(i, 1);
     if (room.players.length < 1)
       rooms.splice(player.roomId, 1);
-    console.log(socket.remoteAddress + ' disconnected.');
-    socket.close();
+    console.log(socket.remoteAddress + ' disconnected.\n\n');
+    // socket.close();
   });
 });
 
 /* -----MAIN SERVER CLOCK----- */
 
 const updatePlayer = (player) => {
+
   player.x += player.vector[0] * player.speed;
   player.y += player.vector[1] * player.speed;
   player.bullets.forEach((b) => {
     b.x += b.vector[0] * 10;
     b.y += b.vector[1] * 10;
   });
+  // collision detection
+  if (player.x - player.size < 0 || player.x + player.size > mapsize)
+    player.vector[0] = -player.vector[0];
+  if (player.y - player.size < 0 || player.y + player.size > mapsize)
+    player.vector[1] = -player.vector[1];
+
+  // wall colliding
+  rooms[player.roomId]
+    .walls
+    .filter(w => distance(w.x, w.y, player.x, player.y) > 100)
+    .forEach(wall => {
+      // console.log(wall);
+      const x = wall.x * 50;
+      const y = wall.y * 50;
+      if (player.x - player.size < x + wall.w && player.x + player.size > x &&
+        player.y + player.size > y && player.y - player.size < y + wall.h) {
+        if (player.x > x && player.x < x + wall.w) {
+          if (player.y > y)
+            player.y = y + wall.h + player.size// + player.speed;
+          if (player.y < y)
+            player.y = y - player.size// - player.speed;
+        } else if (player.y > y && player.y < y + wall.h) {
+          if (player.x > x)
+            player.x = x + wall.w + player.size// + player.speed;
+          if (player.x < x)
+            player.x = x - player.size// - player.speed;
+        }
+        return;
+      }
+    });
+  // powerup colliding
+  rooms[player.roomId]
+    .powerups
+    // .filter(w => distance(w.x, w.y, player.x, player.y) > 100)
+    .forEach((pu, i) => {
+      if (distance(player.x, player.y, pu.x * 50 + 25, pu.y * 50 + 25) < 12) {
+        rooms[player.roomId].powerups.splice(i, 1);
+
+        switch (pu.type) {
+          case 'heart':
+            if (player.health < 3) {
+              player.health++;
+            }
+            break;
+          case 'shield':
+            player.vulnerable = false;
+            setTimeout(() => {
+              player.vulnerable = true;
+            }, 5000);
+        }
+        sockets.get(player.id).send(JSON.stringify({
+          health: player.health,
+          powerup: pu.type,
+          powerups: rooms[player.roomId].powerups
+        }));
+      }
+    });
+  for (let i = 0; i < player.bullets.length; i++) {
+    const b = player.bullets[i];
+    if (b.x < 0 || b.y < 0 || b.x > mapsize || b.y > mapsize) {
+      player.bullets.splice(i, 1);
+      // i--;
+      break;
+    }
+    rooms[player.roomId]
+      .walls
+      .filter(w => distance(w.x, w.y, player.x, player.y) > 75)
+      .forEach((wall) => {
+        if (b.x < wall.x * 50 + wall.w &&
+          b.x > wall.x * 50 &&
+          b.y > wall.y * 50 &&
+          b.y < wall.y * 50 + wall.h) {
+          player.bullets.splice(i, 1);
+          // i--;
+          return;
+        }
+      });
+    rooms[player.roomId]
+      .players
+      .filter(pl => player.id !== pl.id)
+      .forEach(pl => {
+        if (pl.vulnerable && distance(pl.x, pl.y, b.x, b.y) < pl.size) {
+          pl.health--;
+          sockets.get(pl.id).send(JSON.stringify({ health: pl.health, damage: 1 }));
+          if (pl.health < 1) {
+            respawn(pl);
+            sockets.get(pl.id).send(JSON.stringify({ health: pl.health, damage: 1 }));
+          }
+
+
+          player.bullets.splice(i, 1);
+          return;
+        }
+      });
+  }
+
+
 };
 
 setInterval(() => {
@@ -193,18 +303,10 @@ setInterval(() => {
           pl.health,
           pl.speed,
           Number(pl.vulnerable),
-          pl.bullets.map(b => [b.x, b.y])
+          pl.bullets.map(b => [Math.round(b.x), Math.round(b.y)])
         ]),
         id: index
       }));
-      // sockets.get(player.id).send(JSON.stringify([
-      //   room.players.map((pl) => [
-      //     pl.x, pl.y, pl.vector[0], pl.vector[1], Number(player.id === pl.id),
-      //     pl.health, pl.speed, Number(pl.vulnerable),
-      //     pl.bullets.map((bull) => [bull.x, bull.y])
-      //   ]),
-      //   room.powerups.map((pu) => [pu.x, pu.y])
-      // ]));
     });
   });
 
@@ -215,7 +317,7 @@ setInterval(() => {
 
 
 
-
+//#region sio
 // FUCKIN SUCKET.IO SHIT
 /*
 io.sockets.on('connection', (socket) => {
@@ -383,6 +485,9 @@ setInterval(() => { // sever clock
   // io.sockets.emit('update', { players });
 }, 1000 / 50);
 */
+
+//#endregion
+
 setInterval(() => {
   if (Math.random() < 0.3) {
     spawnPowerup();
@@ -394,26 +499,19 @@ const respawn = (player) => {
   player.y = rooms[player.roomId].spawnpoints[randomRange(0, spawnerCount)].y;
   player.vector = [0, 0];
   // player.deaths++;
-
   if (sockets.has(player.id)) {
     player.vulnerable = false;
     player.health = 3;
-    // io.sockets.connected[player.id].emit('updatePlayer', player);
     setTimeout(() => {
       // console.log('unshield' + player.id);
       if (sockets.has(player.id)) {
         player.vulnerable = true;
-        // io.sockets.connected[player.id].emit('updatePlayer', player);
       }
     }, 2000);
   }
 
 
 };
-
-const distanse = (x1, y1, x2, y2) => (
-  Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2))
-);
 
 const generateWalls = (ind) => {
   for (let i = 0; i < wallCount; i++) {
@@ -422,12 +520,13 @@ const generateWalls = (ind) => {
   for (let i = 0; i < spawnerCount; i++) {
     const x = randomRange(0, mapsize / 50);
     const y = randomRange(0, mapsize / 50);
-    if (rooms[ind].walls.every(wall => (wall.x !== x) && (wall.y !== y)))
+    if (rooms[ind].walls.some(wall => (wall.x === x) && (wall.y === y)))
+      i--;
+    else
       rooms[ind].spawnpoints.push({
         x: x * 50 + 25,
         y: y * 50 + 25
       });
-    else i--;
   }
 };
 
@@ -459,7 +558,7 @@ const spawnPowerup = () => {
     if (!collides(pu))
       rooms[id].powerups.push(pu);
     rooms[id].players.forEach(p => {
-      // io.sockets.connected[p.id].emit('updatePowerups', powerups);
+      sockets.get(p.id).send(JSON.stringify({ powerups: rooms[id].powerups }));
     })
   }
 };

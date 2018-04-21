@@ -1,0 +1,35 @@
+<html>
+
+<head>
+  <title>Welcome</title>
+
+  <link rel="stylesheet" href="./style28.css">
+  <link rel="stylesheet" href="./st.css">
+</head>
+
+<body>
+  <div id="hav-io" class="header">hav-io</div>
+  <input type="text" class="circle inputText">
+  <button class="circle circleButton" onclick="auth();">Submit
+    <canvas class="buttonCanv"></canvas>
+  </button>
+
+  <script src="style28.js"></script>
+  <script>
+    let eblan = 12;
+    const xhr = new XMLHttpRequest();
+
+    xhr.onload = () => {
+      if (xhr.readyState === 4) {
+        location.replace(xhr.responseURL);
+      }
+    }
+    const auth = () => {
+      xhr.open('GET', '/auth');
+      xhr.send();
+    }
+
+  </script>
+</body>
+
+</html>
