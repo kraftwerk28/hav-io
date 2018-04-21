@@ -1,12 +1,13 @@
 'use strict';
 
+const testing = false;
 const fs = require('fs');
 const http = require('http');
 const WebSocket = require('websocket').server;
 const classes = require('./classes');
 const files = {};
 // let messages = '';
-const port = 8080;
+const port = testing ? 8080 : 80;
 
 let startUsage = process.cpuUsage();
 
