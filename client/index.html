@@ -8,54 +8,53 @@
 </head>
 
 <body>
-  <div id="kills" class="header" style="float: left; color: limegreen; font-size: xx-large">kills:</div>
-  <div id="deaths" class="header" style="float: right; color: tomato; font-size: xx-large">deaths:</div>
-  <div id="hav-io" class="header">hav-io</div>
-  <table>
-    <tr>
-      <td id="left">
-        <div id="heartContainer" style="position: relative; top: 0px; pointer-events: none">
-          <img class="heart" src="./img/heart.png" width="50" height="50">
-          <img class="heart" src="./img/heart.png" width="50" height="50">
-          <img class="heart" src="./img/heart.png" width="50" height="50">
-        </div>
-        <!-- <textarea id="chatField" class="circle textArea" style="width: 90%; max-height: 100%; height: 300px; background-color: coral"
-          readonly></textarea>
-        <input id="chatInput" class="circle inputText" type="text" class="circle textField" style="width: 90%; height: 30px" placeholder="type here..."> -->
-      </td>
-      <td>
-        <canvas id="game"></canvas>
-      </td>
-      <td id="right">
-        <input id="nickname" class="circle inputText" type="text" maxlength="15" style="height: 30px; width: 290px;" class="textField"
-          placeholder="your nickname">
-        <br>
-        <button class="circle circleButton" style="width: 230px; height: 50px;" onclick="reload()">
-          Restart
-          <canvas class="buttonCanv"></canvas>
-        </button>
-        <button id="mute" class="circle circleButton" style="width: 50px; height: 50px; min-width: 50px; background-size: contain"
-          onclick="mute()">
-          <canvas class="buttonCanv"></canvas>
-        </button>
-        <br>
-        <textarea class="circle textArea" style="width: 290px; height: 150px" readonly>
+  <div id="authoverlay">
+    <div id="hav-io" class="header">hav-io</div>
+    <div style="width: fit-content; margin: auto;">
+      <input id="nick" type="text" class="circle inputText" placeholder="your nickname...">
+      <button class="circle circleButton" onclick="auth();">Submit
+        <canvas class="buttonCanv"></canvas>
+      </button>
+      <br>
+      <textarea class="circle textArea" style="text-align: center; resize: none; width: 427; height: 150" readonly>
 left click: shoot
 right click: accelerate
 
 kill players to be coolest
 gl)
-        </textarea>
-        <div class="circle textArea" style="width: 290px; height: 150px; background-color: palegreen; overflow: hidden">
-          <div style="text-align: center; font-weight: bolder;">CONNECTED:</div>
-          <div id="connected" style="height: 90%; white-space: pre; overflow-y: scroll; overflow-x: hidden"></div>
-        </div>
-      </td>
-    </tr>
-  </table>
-  <div id="ping"></div>
+      </textarea>
+    </div>
+  </div>
+  <div id="kills" class="header" style="float: left; color: limegreen; font-size: xx-large">kills:</div>
+  <div id="deaths" class="header" style="float: right; color: tomato; font-size: xx-large">deaths:</div>
+  <div id="hav-io" class="header">hav-io</div>
+  <div id="heartContainer">
+    <img class="heart" src="./img/heart.png" width="50" height="50">
+    <img class="heart" src="./img/heart.png" width="50" height="50">
+    <img class="heart" src="./img/heart.png" width="50" height="50">
+  </div>
+  <div id="right">
+    <div id="connected">
+    </div>
+    <br>
+    <!-- <button class="circle circleButton" style="width: 230px; height: 50px;" onclick="reload()">
+      Restart
+      <canvas class="buttonCanv"></canvas>
+    </button> -->
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.4/socket.io.js"></script>
+    <br>
+
+  </div>
+  <div id="down">
+    <button id="mute" class="circle circleButton" style="width: 50px; height: 50px; min-width: 50px; background-size: contain"
+      onclick="mute()">
+      <canvas class="buttonCanv"></canvas>
+    </button>
+  </div>
+  <canvas id="minimap" width="100px" height="100px"></canvas>
+  <canvas id="game"></canvas>
+
+  <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.4/socket.io.js"></script> -->
   <script src="./game.js"></script>
   <script src="./style28.js"></script>
 

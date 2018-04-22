@@ -37,8 +37,7 @@ readR('client/', '').forEach(f => {
 });
 
 const route = (url) => {
-  if (url === '/') return './client/welcome.html';
-  if (url.startsWith('/auth')) return './client/index.html';
+  if (url === '/') return './client/index.html';
   return './client' + url;
 };
 
@@ -157,6 +156,15 @@ ws.on('request', (req) => {
     // perform speedup
     if (data.speedup !== undefined)
       player.speed = data.speedup ? 4 : 1;
+
+    if (data.nickname) {
+      player.nickname = data.nickname;
+      room.players.forEach(pl => {
+        sockets.get(pl.id).send(JSON.stringify({
+          nicks: room.players.map(p => [p.id, p.nickname])
+        }));
+      });
+    }
     // send full player info if needed
     // if (data[4]) socket.sendUTF(JSON.stringify(player));
     // perform messenger
@@ -176,6 +184,11 @@ ws.on('request', (req) => {
     if (room.players.length < 1)
       rooms.splice(player.roomId, 1);
     console.log(socket.remoteAddress + ' disconnected.\n\n');
+    room.players.forEach(pl => {
+      sockets.get(pl.id).send(JSON.stringify({
+        nicks: room.players.map(p => [p.id, p.nickname])
+      }));
+    });
     // socket.close();
   });
 });
@@ -191,10 +204,15 @@ const updatePlayer = (player) => {
     b.y += b.vector[1] * 10;
   });
   // collision detection
-  if (player.x - player.size < 0 || player.x + player.size > mapsize)
-    player.vector[0] = -player.vector[0];
-  if (player.y - player.size < 0 || player.y + player.size > mapsize)
-    player.vector[1] = -player.vector[1];
+  if (player.x - player.size < 0) player.x = player.size;
+  if (player.x + player.size > mapsize) player.x = mapsize - player.size;
+  if (player.y - player.size < 0) player.y = player.size;
+  if (player.y + player.size > mapsize) player.y = mapsize - player.size;
+
+  // if (player.x - player.size < 0 || player.x + player.size > mapsize)
+  //   player.vector[0] = -player.vector[0];
+  // if (player.y - player.size < 0 || player.y + player.size > mapsize)
+  //   player.vector[1] = -player.vector[1];
 
   // wall colliding
   rooms[player.roomId]
@@ -240,11 +258,16 @@ const updatePlayer = (player) => {
               player.vulnerable = true;
             }, 5000);
         }
-        sockets.get(player.id).send(JSON.stringify({
-          health: player.health,
-          powerup: pu.type,
-          powerups: rooms[player.roomId].powerups
-        }));
+        rooms[player.roomId]
+          .players
+          .forEach(pl => {
+            sockets.get(pl.id).send(JSON.stringify({
+              health: player.health,
+              powerup: pu.type,
+              powerups: rooms[player.roomId].powerups
+            }));
+          })
+
       }
     });
   for (let i = 0; i < player.bullets.length; i++) {
@@ -304,7 +327,8 @@ setInterval(() => {
           pl.health,
           pl.speed,
           Number(pl.vulnerable),
-          pl.bullets.map(b => [Math.round(b.x), Math.round(b.y)])
+          pl.bullets.map(b => [Math.round(b.x), Math.round(b.y)]),
+          pl.id
         ]),
         id: index
       }));

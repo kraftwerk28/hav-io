@@ -15,6 +15,7 @@ let player = {
   vulnerable: false,
   health: 3,
   collides: false,
+  nickname: ''
 };
 let playersData = {};
 
@@ -74,9 +75,6 @@ window.onload = () => {
     cx: Math.floor(canvas.width / 2),
     cy: Math.floor(canvas.height / 2)
   };
-  // socket = io();
-  // initSocket();
-  socketize();
   updateHealth(3);
   canvOffset = canvas.getBoundingClientRect();
 };
@@ -90,10 +88,22 @@ window.oncontextmenu = () => false;
 
 window.onresize = () => {
   canvOffset = canvas.getBoundingClientRect();
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  viewport.init(canvas.width, canvas.height);
 }
 
 window.onscroll = () => {
   canvOffset = canvas.getBoundingClientRect();
+};
+
+const overlay = document.getElementById('authoverlay');
+const auth = () => {
+  overlay.style.animationPlayState = 'running';
+  setTimeout(() => {
+    document.body.removeChild(overlay);
+  }, 1000);
+  socketize();
 };
 
 //#region frontend
@@ -116,14 +126,11 @@ const heartContainer = document.getElementById('heartContainer');
 
 const muteButton = document.getElementById('mute');
 const connected = document.getElementById('connected');
-const nicknameinput = document.getElementById('nickname');
-// nicknameinput.oninput = (e) => {
-//   localStorage.setItem('havionick', nicknameinput.value);
-//   syncEmit(() => {
-//     player.nickname = nicknameinput.value;
-//     // socket.send
-//   });
-// };
+const nicknameinput = document.getElementById('nick');
+nicknameinput.oninput = (e) => {
+  localStorage.setItem('havionick', nicknameinput.value);
+  player.nickname = nicknameinput.value;
+};
 // chatInput.onkeydown = (e) => {
 //   const str = clearSpaces(chatInput.value);
 //   if (e.keyCode === 13 && str.length > 0) {
@@ -136,12 +143,17 @@ const nicknameinput = document.getElementById('nickname');
 //   }
 // };
 
+const minimap = document.getElementById('minimap');
+const minictx = minimap.getContext('2d');
+minictx.fillStyle = 'lime';
+minictx.strokeStyle = 'lime';
+
 const canvas = document.getElementById('game');
 canvas.style.animationPlayState = 'paused';
 const ctx = canvas.getContext('2d');
 ctx.imageSmoothingEnabled = false;
-canvas.width = 900;
-canvas.height = 550;
+canvas.width = window.innerWidth;//900;
+canvas.height = window.innerHeight;//550;
 ctx.strokeStyle = 'yellow';
 ctx.font = '12px Consolas';
 ctx.textAlign = 'center';
@@ -231,19 +243,25 @@ const screenEffects = {
 };
 //#endregion
 
-//#region socket
+
 const render = (data) => {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  minictx.clearRect(0, 0, minimap.width, minimap.height);
+  minictx.strokeRect(0, 0, minimap.width, minimap.height);
   // console.log(data);
   // viewport.center(player.x, player.y);
 
   canvas.style.backgroundPosition = `${-viewport.x}px ${-viewport.y}px`;
   if (data.p) {
     data.p.forEach(p => {
-      const size = 10;
-      const x = Math.round(p[0]) - viewport.x;
-      const y = Math.round(p[1]) - viewport.y;
-      const grad = ctx.createRadialGradient(x, y, 0, x, y, size * 4);
+      const s = player.size;
+      let x = Math.round(p[0]);
+      let y = Math.round(p[1]);
+      minictx.fillRect(x / size * 100, y / size * 100, 2, 2);
+      x -= viewport.x;
+      y -= viewport.y;
+
+      const grad = ctx.createRadialGradient(x, y, 0, x, y, s * 4);
       grad.addColorStop(0, 'white');
       grad.addColorStop(1, 'transparent');
       const angle = p[2];
@@ -253,7 +271,7 @@ const render = (data) => {
 
       ctx.beginPath();
       ctx.moveTo(x, y);
-      ctx.arc(x, y, size * 4, angle - (Math.PI / 4), angle + (Math.PI / 4));
+      ctx.arc(x, y, s * 4, angle - (Math.PI / 4), angle + (Math.PI / 4));
       ctx.lineTo(x, y);
       ctx.fill();
 
@@ -272,29 +290,32 @@ const render = (data) => {
       else
         ctx.fillStyle = 'white';
       ctx.beginPath();
-      ctx.arc(x, y, size, 0, Math.PI * 2);
+      ctx.arc(x, y, s, 0, Math.PI * 2);
       ctx.fill();
 
-      // if (p.nickname) {
-      //   ctx.strokeText(p.nickname, x, y - 15);
-      // }
+      if (playersData.nicknames) {
+        const ii = playersData.nicknames.findIndex(pn => pn[0] === p[7]);
+        if (ii > -1) {
+          ctx.strokeText(playersData.nicknames[ii][1], x, y - 15);
+        }
+      }
       ctx.fillStyle = 'red';
       p[6].forEach(b => {
         ctx.fillRect(b[0] - viewport.x - 2, b[1] - viewport.y - 2, 4, 4);
       });
       if (!p[5]) {
-        const grad = ctx.createRadialGradient(x, y, 0, x, y, size * 3);
+        const grad = ctx.createRadialGradient(x, y, 0, x, y, s * 3);
         grad.addColorStop(1, 'chartreuse');
         grad.addColorStop(0.5, 'transparent');
         ctx.fillStyle = grad;
         ctx.beginPath();
-        ctx.arc(x, y, size * 3, 0, Math.PI * 2);
+        ctx.arc(x, y, s * 3, 0, Math.PI * 2);
         ctx.fill();
       }
     });
 
     if (true) {
-      const size = 10;
+      const s = player.size;
       let pColor = '';
       if (data.p[data.id][4] < 2)
         switch (data.p[data.id][3]) {
@@ -313,14 +334,18 @@ const render = (data) => {
       let x = data.p[data.id][0];
       let y = data.p[data.id][1];
       viewport.center(x, y);
+      minictx.fillStyle = 'yellow';
+      minictx.fillRect(x / size * 100, y / size * 100, 4, 4);
+      minictx.fillStyle = 'lime';
       x -= viewport.x;
       y -= viewport.y;
-      const mygrad = ctx.createRadialGradient(x, y, 0, x, y, size * 3);
+
+      const mygrad = ctx.createRadialGradient(x, y, 0, x, y, s * 3);
       mygrad.addColorStop(0, ctx.fillStyle);
       mygrad.addColorStop(1, 'transparent');
       ctx.fillStyle = mygrad;
       ctx.beginPath();
-      ctx.arc(x, y, size * 3, 0, Math.PI * 2);
+      ctx.arc(x, y, s * 3, 0, Math.PI * 2);
       ctx.fill();
     }
   }
@@ -332,11 +357,9 @@ const render = (data) => {
   }
 
   // ctx.fillStyle = ctx.createPattern(wallimg, 'repeat');
-
   walls.forEach(wall => {
     ctx.drawImage(wallimg, 50 * wall.x - viewport.x, 50 * wall.y - viewport.y);
   });
-
   // calcCollisions();
 
   powerups.forEach((pu, i) => {
@@ -390,6 +413,11 @@ const processData = (data) => {
 
   }
 
+  if (data.nicks !== undefined) {
+    playersData.nicknames = data.nicks;
+    connected.textContent = data.nicks.reduce((res, cur) => res + cur[1] + '\n', '');
+  }
+
   render(data);
 };
 
@@ -402,13 +430,15 @@ const socketize = () => {
     // render(data);
   };
 
+  socket.onopen = (ev) => {
+    socket.send(JSON.stringify({ nickname: player.nickname }));
+  };
+
   socket.onclose = (event) => {
     console.log('Connection closed. Code: ' + event.code)
   };
 };
 
-
-//#endregion
 
 const initSocket = () => {
   socket.on('welcome', data => {

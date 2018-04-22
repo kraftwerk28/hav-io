@@ -1,13 +1,21 @@
 body {
   /* position: fixed; */
+  color: white;
+  font-family: 'Consolas', 'Courier New', Courier, monospace;
   background-color: rgba(0, 0, 0, 0.4);
+  height: 0;
+  overflow: hidden;
 }
 
 #game {
   background-image: url('./img/floor.png');
-  margin: 10px;
-  box-shadow: 0px 0px 30px 2px grey;
-  border-radius: 5px;
+  /* margin: 10px; */
+  /* box-shadow: 0px 0px 30px 2px grey; */
+  /* border-radius: 5px; */
+  z-index: -1;
+  position: absolute;
+  top: 0;
+  left: 0;
   animation-duration: 1s;
 }
 
@@ -26,8 +34,60 @@ body {
 }
 
 #right {
+  position: absolute;
+  pointer-events: none;
+  right: 0px;
+  top: 40px;
+}
+
+#down {
+  position: absolute;
+  pointer-events: none;
+  bottom: 0px;
+  left: 0px;
+  right: 0px;
+}
+
+#heartContainer {
   /* position: relative; */
-  text-align: left;
+  width: 0px;
+  top: 20px;
+  pointer-events: none;
+}
+
+#connected {
+  font-size: small !important;
+  pointer-events: none;
+  height: auto;
+  width: 150px;
+  white-space: pre-line;
+  overflow: hidden;
+}
+
+@keyframes overlay {
+  100% {
+    transform: translate(0, -100%);
+  }
+}
+
+#authoverlay {
+  position: absolute;
+  z-index: 3;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url('./img/floor.png');
+  animation-duration: 1s;
+  animation-name: overlay;
+  animation-play-state: paused;
+}
+
+#minimap {
+  position: absolute;
+  right: 5px;
+  bottom: 5px;
+  pointer-events: none;
 }
 
 .heart {
@@ -104,6 +164,7 @@ td {
   text-shadow: 2px 2px 3px gray;
   text-align: center;
   font-weight: bolder;
+  pointer-events: none;
 }
 
 #connected {

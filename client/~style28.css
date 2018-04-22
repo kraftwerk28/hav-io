@@ -1,3 +1,7 @@
+body {
+  font-family: 'Consolas', 'Courier New', Courier, monospace;
+}
+
 a {
   text-decoration-style: none;
   color: white;
@@ -5,14 +9,11 @@ a {
   padding: 10px;
 }
 
-body {
-  transition-duration: 0.2s;
-}
-
 .circle {
   border-radius: 2px;
-  box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.3);
+  box-shadow: 0px 1px 3px grey;
   font-family: 'Consolas', 'Courier New', Courier, monospace;
+  /* font-family: 'Consolas', 'Courier New', Courier, monospace; */
   text-align: center;
   vertical-align: middle;
   min-width: 100px;
@@ -24,12 +25,11 @@ body {
   padding-right: 10px;
   margin: 10px;
   transition-duration: 0.5s;
-  pointer-events: visiblePainted;
 }
 
 .circle:hover {
   transition-duration: 0.2s;
-  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: 0px 4px 8px grey;
 }
 
 .buttonCanv {
@@ -56,7 +56,7 @@ body {
   position: relative;
 }
 
-/* circle dropdown */
+/* #region dropdown*/
 
 .circleDropdown {
   z-index: 1;
@@ -70,7 +70,7 @@ body {
   text-align: center;
   font-size: 100%;
   font-family: 'Consolas', 'Courier New', Courier, monospace;
-  box-shadow: 0px 0px 30px 2px rgba(0, 0, 0, 0.5);
+  box-shadow: 0px 0px 30px 2px grey;
   transition-duration: 1s;
   margin: 10px;
   list-style-type: none;
@@ -81,7 +81,7 @@ body {
 }
 
 .circleDropdown:hover .dropdownul {
-  box-shadow: 0px 10px 30px 5px rgba(0, 0, 0, 0.5);
+  box-shadow: 0px 10px 30px 5px grey;
 }
 
 .circleDropdown:hover .dropdownul li {
@@ -113,10 +113,15 @@ body {
   transition-duration: 0.5s;
 }
 
-/* input text */
+/* #endregion */
+
+/* #region dropdownClick*/
+
+/* #region textfield*/
 
 .inputText {
   width: auto;
+  /* padding: 0px; */
   border: 2px solid;
   border-color: mediumslateblue;
   text-align: left;
@@ -124,17 +129,21 @@ body {
 }
 
 .inputText:focus {
-  box-shadow: 0px 4px 16px 4px rgba(0, 0, 0, 0.2);
+  box-shadow: 0px 4px 16px 4px grey;
   border-color: transparent;
   transition-duration: 0.2s;
 }
 
+/* #endregion */
+
 .textArea {
+  /* min-height: 200px; */
+  /* height: fit-content; */
   background-color: greenyellow;
   text-align: initial;
   font-size: large;
   transition-duration: 0s;
-  resize: both;
+  resize: none;
   overflow: auto;
 }
 
@@ -149,7 +158,6 @@ body {
   position: relative;
   padding-left: 30px;
   transition-duration: 0.5s;
-  cursor: pointer;
   user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
@@ -219,8 +227,6 @@ body {
   transition-duration: 0.2s;
   transition-delay: 0.2s;
 }
-
-/* webkit */
 
 ::-webkit-scrollbar-thumb {
   background-color: silver;
