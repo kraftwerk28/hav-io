@@ -58,7 +58,6 @@ let powerups = [];
 
 window.onload = () => {
   muteButton.style.backgroundImage = 'url(\'./img/Mute.png\')';
-  sfx.soundtrack.play();
   const n = localStorage.getItem('havionick');
   kills = localStorage.getItem('haviokills') ? localStorage.getItem('haviokills') : 0;
   deaths = localStorage.getItem('haviodeaths') ? localStorage.getItem('haviodeaths') : 0;
@@ -104,6 +103,7 @@ const auth = () => {
     document.body.removeChild(overlay);
   }, 1000);
   socketize();
+  sfx.soundtrack.play();
 };
 
 //#region frontend
