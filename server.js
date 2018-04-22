@@ -108,7 +108,7 @@ const createPlayer = () => {
   }
   p = new classes.Player(plCount, rooms.length);
   rooms.push(new classes.Room(mapsize, maxPl, p));
-  generateWalls(rooms.length);
+  generateWalls(rooms.length - 1);
   return p;
 };
 
@@ -297,9 +297,11 @@ const updatePlayer = (player) => {
         if (pl.vulnerable && distance(pl.x, pl.y, b.x, b.y) < pl.size) {
           pl.health--;
           sockets.get(pl.id).send(JSON.stringify({ health: pl.health, damage: 1 }));
+          
           if (pl.health < 1) {
             respawn(pl);
             sockets.get(pl.id).send(JSON.stringify({ health: pl.health, damage: 1 }));
+            sockets.get(player.id).send(JSON.stringify({ frag: 1 }));
           }
 
 

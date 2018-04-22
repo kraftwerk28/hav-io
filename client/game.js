@@ -390,15 +390,20 @@ const processData = (data) => {
   }
   if (data.damage !== undefined) {
     if (data.health < 1) {
+      deaths++;
       sfx.die.play();
       screenEffects.gameover();
-      // updateHealth(player.health);
+      updatescore();
     } else {
       sfx.hit.play();
       screenEffects.hit();
       // updateHealth(player.health);
     }
     return;
+  }
+  if (data.frag !== undefined) {
+    kills++;
+    updatescore();
   }
   if (data.powerup !== undefined) {
     switch (data.powerup) {
