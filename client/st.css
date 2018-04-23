@@ -107,6 +107,10 @@ body {
   animation-name: heal;
 }
 
+.animshield {
+  animation-name: shield;
+}
+
 @keyframes gameover {
   0% {
     background-image: none;
@@ -132,6 +136,17 @@ body {
   0% {
     background-image: none;
     background-color: lime;
+  }
+  100% {
+    /* background-image: none; */
+    background-color: black;
+  }
+}
+
+@keyframes shield {
+  0% {
+    background-image: none;
+    background-color: cyan;
   }
   100% {
     /* background-image: none; */

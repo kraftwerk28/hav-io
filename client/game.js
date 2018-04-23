@@ -1,6 +1,6 @@
 'use strict';
 
-const testing = false;
+const testing = 1;
 let socket;
 
 let syncEmit = (callback) => { awaitFunc = callback };
@@ -99,9 +99,6 @@ window.onscroll = () => {
 const overlay = document.getElementById('authoverlay');
 const auth = () => {
   overlay.style.animationPlayState = 'running';
-  setTimeout(() => {
-    document.body.removeChild(overlay);
-  }, 1000);
   socketize();
   sfx.soundtrack.play();
 };
@@ -239,6 +236,14 @@ const screenEffects = {
     }, 100);
 
     canvas.style.animationPlayState = 'running';
+  },
+  shield() {
+    canvas.classList = '';
+    setTimeout(() => {
+      canvas.classList.add('animshield')
+    }, 100);
+
+    canvas.style.animationPlayState = 'running';
   }
 };
 //#endregion
@@ -293,6 +298,7 @@ const render = (data) => {
       ctx.arc(x, y, s, 0, Math.PI * 2);
       ctx.fill();
 
+      ctx.strokeStyle = 'yellow';
       if (playersData.nicknames) {
         const ii = playersData.nicknames.findIndex(pn => pn[0] === p[7]);
         if (ii > -1) {
@@ -414,6 +420,7 @@ const processData = (data) => {
         break;
       case 'shield':
         sfx.shieldPick.play();
+        screenEffects.shield();
     }
 
   }
@@ -437,6 +444,7 @@ const socketize = () => {
 
   socket.onopen = (ev) => {
     socket.send(JSON.stringify({ nickname: player.nickname }));
+    document.body.removeChild(overlay);
   };
 
   socket.onclose = (event) => {
@@ -669,3 +677,4 @@ const calcCollisions = () => {
 };
 
 if (testing) mute();
+nicknameinput.focus();

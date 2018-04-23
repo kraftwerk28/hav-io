@@ -1,6 +1,6 @@
 'use strict';
 
-const testing = false;
+const testing = 1;
 const fs = require('fs');
 const http = require('http');
 const WebSocket = require('websocket').server;
@@ -157,7 +157,7 @@ ws.on('request', (req) => {
     if (data.speedup !== undefined)
       player.speed = data.speedup ? 4 : 1;
 
-    if (data.nickname) {
+    if (data.nickname !== undefined) {
       player.nickname = data.nickname;
       room.players.forEach(pl => {
         sockets.get(pl.id).send(JSON.stringify({
@@ -286,8 +286,8 @@ const updatePlayer = (player) => {
           b.y > wall.y * 50 &&
           b.y < wall.y * 50 + wall.h) {
           player.bullets.splice(i, 1);
-          // i--;
-          return;
+          i--;
+          // return;
         }
       });
     rooms[player.roomId]
@@ -306,7 +306,8 @@ const updatePlayer = (player) => {
 
 
           player.bullets.splice(i, 1);
-          return;
+          i--;
+          // return;
         }
       });
   }
