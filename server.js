@@ -1,6 +1,6 @@
 'use strict';
 
-const testing = 1;
+const testing = !1;
 const fs = require('fs');
 const http = require('http');
 const WebSocket = require('websocket').server;

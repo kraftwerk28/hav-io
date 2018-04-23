@@ -1,6 +1,6 @@
 'use strict';
 
-const testing = 1;
+const testing = !1;
 let socket;
 
 let syncEmit = (callback) => { awaitFunc = callback };
