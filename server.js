@@ -138,7 +138,13 @@ const createPlayer = (isBot) => {
   plCount++;
   if (rooms.length < 1) {
     p = isBot ? new classes.Bot(plCount, 0) : new classes.Player(plCount, 0);
-    rooms.push(new classes.Room(mapsize, maxPl, p, new classes.Bot(++plCount, 0)));
+    rooms.push(new classes.Room(
+      mapsize,
+      maxPl,
+      p,
+      new classes.Bot(++plCount, 0),
+      new classes.Bot(++plCount, 0)
+    ));
     generateWalls(0);
     return e();
   }
@@ -151,7 +157,12 @@ const createPlayer = (isBot) => {
     }
   }
   p = isBot ? new classes.Bot(plCount, rooms.length) : new classes.Player(plCount, rooms.length);
-  rooms.push(new classes.Room(mapsize, maxPl, p, new classes.Bot(++plCount, rooms.length)));
+  rooms.push(new classes.Room(mapsize,
+    maxPl,
+    p,
+    new classes.Bot(++plCount, rooms.length),
+    new classes.Bot(++plCount, rooms.length)
+  ));
   console.log('new room created');
   generateWalls(rooms.length - 1);
   return e();
@@ -257,8 +268,12 @@ ws.on('request', (req) => {
     sockets.delete(player.id);
     // sockets.splice(sockets.findIndex(s => s.id === socket.id), 1);
     room.players.splice(i, 1);
-    if (room.players.length + room.bots.length < 1)
+    if (room.players.filter(p => !p.isBot).length < 1) {
+      console.log('room deleted');
       rooms.splice(player.roomId, 1);
+    }
+    // if (room.players.length < 1)
+    //   rooms.splice(player.roomId, 1);
     console.log(socket.remoteAddress + ' disconnected.\n\n');
     room.players.filter(p => !p.isBot).forEach(pl => {
       sockets.get(pl.id).send(JSON.stringify({
