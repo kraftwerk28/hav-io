@@ -132,7 +132,7 @@ const sfx = {
 }
 sfx.soundtrack.loop = true;
 sfx.soundtrack.volume = 0.5;
-sfx.soundtrack.oncanplay = () => { loaded = true }
+sfx.soundtrack.oncanplaythrough = () => { loaded = true }
 
 const heartContainer = document.getElementById('heartContainer');
 
