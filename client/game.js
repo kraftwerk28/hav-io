@@ -121,6 +121,11 @@ const auth = () => {
 };
 
 //#region frontend
+if (typeof window.orientation !== 'undefined') {
+  document.getElementById('authentification').disabled = true;
+  document.getElementById('about').textContent = 'Sorry, this game is for desktops only yet((';
+}
+
 const sfx = {
   die: new Audio('./sfx/Death.wav'),
   shoot: new Audio('./sfx/Shoot.wav'),
