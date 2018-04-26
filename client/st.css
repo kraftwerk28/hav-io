@@ -49,13 +49,13 @@ body {
 }
 
 #heartContainer {
-  /* position: relative; */
+  position: absolute;
   width: 0px;
-  top: 20px;
+  top: 40px;
   pointer-events: none;
 }
 
-#connected {
+#connected, #roomId {
   font-size: small !important;
   pointer-events: none;
   height: auto;
@@ -151,6 +151,33 @@ body {
   100% {
     /* background-image: none; */
     background-color: black;
+  }
+}
+
+#loader {
+  visibility: hidden;
+  margin: auto;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  border-style: solid;
+  border-top-color: transparent;
+  border-bottom-color: transparent;
+  border-left-color: blueviolet;
+  border-right-color: blueviolet;
+  border-width: 10px;
+  animation-name: loader;
+  animation-duration: 1s;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+@keyframes loader {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(1turn);
   }
 }
 

@@ -17,9 +17,10 @@ let player = {
   collides: false,
   nickname: ''
 };
+
 let playersData = {};
 
-// let movevector = { x: 0, y: 0 };
+
 let awaitFunc = null;
 let bulletClock;
 let canvOffset = {};
@@ -28,6 +29,7 @@ let lClick = false;
 let pingStart = 0;
 let size = 1500;
 let canvasCenter = {};
+let loaded = false;
 let smoothness = 0.2;
 
 const viewport = {
@@ -85,7 +87,11 @@ window.onunload = () => {
 
 window.oncontextmenu = () => false;
 
-window.onresize = () => {
+window.onwheel = (e) => {
+  e.preventDefault();
+}
+
+window.onresize = (e) => {
   canvOffset = canvas.getBoundingClientRect();
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
@@ -98,9 +104,20 @@ window.onscroll = () => {
 
 const overlay = document.getElementById('authoverlay');
 const auth = () => {
-  overlay.style.animationPlayState = 'running';
-  socketize();
-  sfx.soundtrack.play();
+  document.getElementById('loader').style.visibility = 'visible';
+  const check = () => {
+    if (!loaded)
+      setTimeout(() => {
+        check();
+      }, 100);
+    else {
+      overlay.style.animationPlayState = 'running';
+      socketize();
+      sfx.soundtrack.play();
+    }
+  };
+  check();
+
 };
 
 //#region frontend
@@ -115,6 +132,7 @@ const sfx = {
 }
 sfx.soundtrack.loop = true;
 sfx.soundtrack.volume = 0.5;
+sfx.soundtrack.oncanplay = () => { loaded = true }
 
 const heartContainer = document.getElementById('heartContainer');
 
@@ -123,6 +141,7 @@ const heartContainer = document.getElementById('heartContainer');
 
 const muteButton = document.getElementById('mute');
 const connected = document.getElementById('connected');
+const _roomId = document.getElementById('roomId');
 const nicknameinput = document.getElementById('nick');
 nicknameinput.oninput = (e) => {
   localStorage.setItem('havionick', nicknameinput.value);
@@ -152,7 +171,7 @@ ctx.imageSmoothingEnabled = false;
 canvas.width = window.innerWidth;//900;
 canvas.height = window.innerHeight;//550;
 ctx.strokeStyle = 'yellow';
-ctx.font = '12px Consolas';
+ctx.font = '10px Consolas';
 ctx.textAlign = 'center';
 
 
@@ -257,6 +276,11 @@ const render = (data) => {
   // viewport.center(player.x, player.y);
 
   canvas.style.backgroundPosition = `${-viewport.x}px ${-viewport.y}px`;
+
+  walls.forEach(wall => {
+    ctx.drawImage(wallimg, wall.x - viewport.x, wall.y - viewport.y);
+  });
+
   if (data.p) {
     data.p.forEach(p => {
       const s = player.size;
@@ -350,10 +374,74 @@ const render = (data) => {
       mygrad.addColorStop(0, ctx.fillStyle);
       mygrad.addColorStop(1, 'transparent');
       ctx.fillStyle = mygrad;
-      ctx.beginPath();
+      // ctx.beginPath();
       ctx.arc(x, y, s * 3, 0, Math.PI * 2);
       ctx.fill();
     }
+  }
+  if (data.b) {
+    data.b.forEach(p => {
+      // console.log(p);
+      const s = player.size;
+      let x = Math.round(p[0]);
+      let y = Math.round(p[1]);
+      minictx.fillRect(x / size * 100, y / size * 100, 2, 2);
+      x -= viewport.x;
+      y -= viewport.y;
+
+      const grad = ctx.createRadialGradient(x, y, 0, x, y, s * 4);
+      grad.addColorStop(0, 'white');
+      grad.addColorStop(1, 'transparent');
+      const angle = p[2];
+
+
+      ctx.fillStyle = grad;
+
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.arc(x, y, s * 4, angle - (Math.PI / 4), angle + (Math.PI / 4));
+      ctx.lineTo(x, y);
+      ctx.fill();
+
+      if (p[4] < 2)
+        switch (p[3]) {
+          case 3:
+            ctx.fillStyle = 'lime';
+            break;
+          case 2:
+            ctx.fillStyle = 'yellow';
+            break;
+          case 1:
+            ctx.fillStyle = 'red';
+            break;
+        }
+      else
+        ctx.fillStyle = 'white';
+      ctx.beginPath();
+      ctx.arc(x, y, s, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = 'yellow';
+      if (playersData.nicknames) {
+        const ii = playersData.nicknames.findIndex(pn => pn[0] === p[7]);
+        if (ii > -1) {
+          ctx.strokeText(playersData.nicknames[ii][1], x, y - 15);
+        }
+      }
+      ctx.fillStyle = 'red';
+      p[6].forEach(b => {
+        ctx.fillRect(b[0] - viewport.x - 2, b[1] - viewport.y - 2, 4, 4);
+      });
+      if (!p[5]) {
+        const grad = ctx.createRadialGradient(x, y, 0, x, y, s * 3);
+        grad.addColorStop(1, 'chartreuse');
+        grad.addColorStop(0.5, 'transparent');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(x, y, s * 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    });
   }
   if (data.walls) {
     walls = data.walls;
@@ -363,14 +451,12 @@ const render = (data) => {
   }
 
   // ctx.fillStyle = ctx.createPattern(wallimg, 'repeat');
-  walls.forEach(wall => {
-    ctx.drawImage(wallimg, 50 * wall.x - viewport.x, 50 * wall.y - viewport.y);
-  });
+
   // calcCollisions();
 
   powerups.forEach((pu, i) => {
-    const x = pu.x * 50;
-    const y = pu.y * 50;
+    const x = pu.x;
+    const y = pu.y;
     const lowb = 15;
     const topb = 35;
     if (pu.type === 'shield')
@@ -379,6 +465,14 @@ const render = (data) => {
       ctx.drawImage(heart_img, x - viewport.x, y - viewport.y);
   });
 
+  ctx.strokeStyle = 'red';
+  ctx.beginPath();
+  ctx.moveTo(-viewport.x, -viewport.y);
+  ctx.lineTo(size - viewport.x, -viewport.y);
+  ctx.lineTo(size - viewport.x, size - viewport.y);
+  ctx.lineTo(-viewport.x, size - viewport.y);
+  ctx.lineTo(-viewport.x, -viewport.y);
+  ctx.stroke();
 };
 
 const processData = (data) => {
@@ -429,6 +523,13 @@ const processData = (data) => {
     playersData.nicknames = data.nicks;
     connected.textContent = data.nicks.reduce((res, cur) => res + cur[1] + '\n', '');
   }
+  if (data.roomId !== undefined) {
+    _roomId.textContent = 'room id: ' + data.roomId;
+  }
+
+  if (data.console) {
+    console.log(data.console);
+  }
 
   render(data);
 };
@@ -451,7 +552,6 @@ const socketize = () => {
     console.log('Connection closed. Code: ' + event.code)
   };
 };
-
 
 const initSocket = () => {
   socket.on('welcome', data => {
@@ -674,6 +774,10 @@ const calcCollisions = () => {
     // player.collides = false;
   }
 
+};
+
+const command = (c) => {
+  socket.send(JSON.stringify({ command: c }));
 };
 
 if (testing) mute();

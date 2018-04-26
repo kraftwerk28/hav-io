@@ -8,7 +8,6 @@ const classes = require('./classes');
 const files = {};
 // let messages = '';
 const port = testing ? 8080 : 80;
-
 let startUsage = process.cpuUsage();
 
 //#region static routing and server init
@@ -75,11 +74,13 @@ const getUsage = (value) => {
 
 const rooms = [];
 const sockets = new Map();
-const maxPl = 5;
+const maxPl = 10;
 const mapsize = 1500;
 const wallCount = mapsize / 20;
 const spawnerCount = 6;
 let plCount = -1;
+const rotDelta = 0.1;
+
 
 const randomRange = (start, end) => {
   return Math.floor(Math.random() * end + start)
@@ -89,31 +90,96 @@ const distance = (x1, y1, x2, y2) => {
   return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2))
 };
 
-const createPlayer = () => {
+const toDeg = rad => rad * 57.3;
+
+const normalize = (vector) => {
+  const l = Math.sqrt(Math.pow(vector[0], 2) + Math.pow(vector[1], 2));
+  return [vector[0] / l, vector[1] / l];
+};
+
+const rotate = (vec, rad) => {
+  const v = [vec[0], vec[1]];
+  v[0] = vec[0] * Math.cos(rad) - vec[1] * Math.sin(rad);
+  v[1] = vec[0] * Math.sin(rad) + vec[1] * Math.cos(rad);
+  return v;
+};
+
+const vecLerp = (v1, v2) => {
+  const dif = [v2[0] - v1[0], v2[1] - v1[1]];
+  let a = 0.5;
+  if ((v1[0] + dif[0] === v2[0] && v1[1] + dif[1] === v2[1]) || v2[0] * v1[0] + v2[1] * v1[1] < 0)
+    a = -0.5;
+  const v = [0, 0];
+  v[0] = v2[0] * Math.cos(a) - v2[1] * Math.sin(a);
+  v[1] = v2[0] * Math.sin(a) + v2[1] * Math.cos(a);
+  return v;
+};
+
+const dot = (v1, v2) => {
+  return v1[0] * v2[0] + v1[1] * v2[1];
+};
+
+const createPlayer = (isBot) => {
   let p;
+  const sendNicks = () => {
+    const room = rooms[p.roomId];
+    room.players.forEach(pl => {
+      if (!pl.isBot)
+        sockets.get(pl.id).send(JSON.stringify({
+          nicks: room.players.map(p => [p.id, p.nickname])
+        }));
+    });
+  }
+  const e = () => {
+    // sendNicks();
+    respawn(p);
+    return p;
+  };
   plCount++;
   if (rooms.length < 1) {
-    p = new classes.Player(plCount, 0);
-    rooms.push(new classes.Room(mapsize, maxPl, p));
+    p = isBot ? new classes.Bot(plCount, 0) : new classes.Player(plCount, 0);
+    rooms.push(new classes.Room(mapsize, maxPl, p, new classes.Bot(++plCount, 0)));
     generateWalls(0);
-    return p;
+    return e();
   }
 
   for (let i = 0; i < rooms.length; i++) {
     if (rooms[i].players.length < rooms[i].maxPlayers) {
-      p = new classes.Player(plCount, i);
+      p = isBot ? new classes.Bot(plCount, i) : new classes.Player(plCount, i);
       rooms[i].players.push(p);
-      return p;
+      return e();
     }
   }
-  p = new classes.Player(plCount, rooms.length);
-  rooms.push(new classes.Room(mapsize, maxPl, p));
+  p = isBot ? new classes.Bot(plCount, rooms.length) : new classes.Player(plCount, rooms.length);
+  rooms.push(new classes.Room(mapsize, maxPl, p, new classes.Bot(++plCount, rooms.length)));
+  console.log('new room created');
   generateWalls(rooms.length - 1);
-  return p;
+  return e();
 };
 
 const createBot = () => {
+  createPlayer(true);
+};
 
+const kickBot = (roomId) => {
+  rooms[roomId].players.some((p, i) => {
+    if (p.isBot) {
+      rooms[roomId].players.splice(i, 1);
+      rooms[roomId].players.forEach(pl => {
+        if (!pl.isBot)
+          sockets.get(pl.id).send(JSON.stringify({
+            nicks: rooms[roomId].players.map(p => [p.id, p.nickname]),
+            // .concat(room.bots.map(p => [p.id, p.nickname])),
+          }));
+      });
+      return true;
+    }
+    return false;
+  });
+};
+
+const setTarget = (roomId, x, y) => {
+  rooms[roomId].players.filter(p => p.isBot)[0].target = [x, y];
 };
 
 const ws = new WebSocket({
@@ -125,14 +191,14 @@ const ws = new WebSocket({
 
 ws.on('request', (req) => {
   const socket = req.accept('', req.origin);
-  console.log(socket.remoteAddress + ' connected.');
-  let player = createPlayer(plCount);
-  console.log('player created...');
-  sockets.set(plCount, socket);
-  console.log('socket set');
+  // console.log(socket.remoteAddress + ' connected.');
+  let player = createPlayer();
+  // console.log('player created...');
+  sockets.set(player.id, socket);
+  // console.log('socket set');
   respawn(player);
-  console.log('player respawned');
-  socket.id = plCount;
+  // console.log('player respawned');
+  socket.id = player.id;
   let room = rooms[player.roomId];
 
   setTimeout(() => {
@@ -148,20 +214,18 @@ ws.on('request', (req) => {
     // perform shooting
     if (data.shoot)
       if (player.speed <= 1)
-        player.bullets.push({
-          x: player.x,
-          y: player.y,
-          vector: [player.vector[0], player.vector[1]]
-        });
+        player.shoot()
     // perform speedup
     if (data.speedup !== undefined)
       player.speed = data.speedup ? 4 : 1;
 
     if (data.nickname !== undefined) {
-      player.nickname = data.nickname;
-      room.players.forEach(pl => {
+      player.nickname = data.nickname ? data.nickname : 'Player';
+      room.players.filter(p => !p.isBot).forEach(pl => {
         sockets.get(pl.id).send(JSON.stringify({
           nicks: room.players.map(p => [p.id, p.nickname])
+            .concat(room.bots.map(p => [p.id, p.nickname])),
+          roomId: pl.roomId
         }));
       });
     }
@@ -169,6 +233,18 @@ ws.on('request', (req) => {
     // if (data[4]) socket.sendUTF(JSON.stringify(player));
     // perform messenger
     // if (data[5]) { }
+
+    if (data.command && testing) {
+      try {
+        socket.send(JSON.stringify({
+          console: eval(data.command)
+        }));
+      } catch (e) {
+        socket.send(JSON.stringify({
+          console: 'Error ' + e.name + ":" + e.message + "\n" + e.stack
+        }));
+      }
+    }
   };
 
   socket.on('message', (event) => {
@@ -181,10 +257,10 @@ ws.on('request', (req) => {
     sockets.delete(player.id);
     // sockets.splice(sockets.findIndex(s => s.id === socket.id), 1);
     room.players.splice(i, 1);
-    if (room.players.length < 1)
+    if (room.players.length + room.bots.length < 1)
       rooms.splice(player.roomId, 1);
     console.log(socket.remoteAddress + ' disconnected.\n\n');
-    room.players.forEach(pl => {
+    room.players.filter(p => !p.isBot).forEach(pl => {
       sockets.get(pl.id).send(JSON.stringify({
         nicks: room.players.map(p => [p.id, p.nickname])
       }));
@@ -217,11 +293,11 @@ const updatePlayer = (player) => {
   // wall colliding
   rooms[player.roomId]
     .walls
-    .filter(w => distance(w.x, w.y, player.x, player.y) > 100)
+    .filter(w => distance(w.x, w.y, player.x, player.y) < 100)
     .forEach(wall => {
       // console.log(wall);
-      const x = wall.x * 50;
-      const y = wall.y * 50;
+      const x = wall.x;
+      const y = wall.y;
       if (player.x - player.size < x + wall.w && player.x + player.size > x &&
         player.y + player.size > y && player.y - player.size < y + wall.h) {
         if (player.x > x && player.x < x + wall.w) {
@@ -235,15 +311,14 @@ const updatePlayer = (player) => {
           if (player.x < x)
             player.x = x - player.size// - player.speed;
         }
-        return;
+        // return true;
       }
     });
   // powerup colliding
   rooms[player.roomId]
     .powerups
-    // .filter(w => distance(w.x, w.y, player.x, player.y) > 100)
-    .forEach((pu, i) => {
-      if (distance(player.x, player.y, pu.x * 50 + 25, pu.y * 50 + 25) < 12) {
+    .some((pu, i) => {
+      if (distance(player.x, player.y, pu.x + 25, pu.y + 25) < 12) {
         rooms[player.roomId].powerups.splice(i, 1);
 
         switch (pu.type) {
@@ -258,18 +333,24 @@ const updatePlayer = (player) => {
               player.vulnerable = true;
             }, 5000);
         }
+        if (!player.isBot)
+          sockets.get(player.id).send(JSON.stringify({
+            health: player.health,
+            powerup: pu.type,
+          }));
         rooms[player.roomId]
           .players
+          .filter(p => !p.isBot)
           .forEach(pl => {
             sockets.get(pl.id).send(JSON.stringify({
-              health: player.health,
-              powerup: pu.type,
               powerups: rooms[player.roomId].powerups
             }));
           })
 
+        return true;
       }
     });
+  // bullet colliing
   for (let i = 0; i < player.bullets.length; i++) {
     const b = player.bullets[i];
     if (b.x < 0 || b.y < 0 || b.x > mapsize || b.y > mapsize) {
@@ -279,40 +360,117 @@ const updatePlayer = (player) => {
     }
     rooms[player.roomId]
       .walls
-      .filter(w => distance(w.x, w.y, player.x, player.y) > 75)
-      .forEach((wall) => {
-        if (b.x < wall.x * 50 + wall.w &&
-          b.x > wall.x * 50 &&
-          b.y > wall.y * 50 &&
-          b.y < wall.y * 50 + wall.h) {
+      .filter(w => distance(w.x, w.y, b.x, b.y) < 100)
+      .some((wall) => {
+        if (b.x < wall.x + wall.w &&
+          b.x > wall.x &&
+          b.y > wall.y &&
+          b.y < wall.y + wall.h) {
           player.bullets.splice(i, 1);
-          i--;
-          // return;
+          // i--;
+          return true;
         }
       });
     rooms[player.roomId]
       .players
       .filter(pl => player.id !== pl.id)
-      .forEach(pl => {
+      .some(pl => {
         if (pl.vulnerable && distance(pl.x, pl.y, b.x, b.y) < pl.size) {
           pl.health--;
-          sockets.get(pl.id).send(JSON.stringify({ health: pl.health, damage: 1 }));
-          
+          if (!pl.isBot)
+            sockets.get(pl.id).send(JSON.stringify({ health: pl.health, damage: 1 }));
+
           if (pl.health < 1) {
             respawn(pl);
-            sockets.get(pl.id).send(JSON.stringify({ health: pl.health, damage: 1 }));
-            sockets.get(player.id).send(JSON.stringify({ frag: 1 }));
+            if (!pl.isBot)
+              sockets.get(pl.id).send(JSON.stringify({ health: pl.health, damage: 1 }));
+            if (!player.isBot)
+              sockets.get(player.id).send(JSON.stringify({ frag: 1 }));
           }
 
 
           player.bullets.splice(i, 1);
-          i--;
-          // return;
+          // i--;
+          return true;
         }
       });
   }
 
 
+};
+
+const updateBot = (bot) => {
+  const radius = 50;
+  const sideDelta = 25;
+
+  const pls = rooms[bot.roomId].players.filter(p => p.id !== bot.id).concat(rooms[bot.roomId].powerups);
+  let dis = Infinity;
+  let minI = 0;
+  if (pls.length > 0) {
+    for (let i = 0; i < pls.length; i++) {
+      const dst = distance(pls[i].x, pls[i].y, bot.x, bot.y);
+      if (dst < dis) {
+        dis = dst;
+        minI = i;
+      }
+    }
+
+    const pt = pls[minI];
+    if (dis > 300) bot.speed = 4;
+    else bot.speed = 1;
+    bot.target = pt.type ? [pt.x + 25, pt.y + 25] : [pt.x, pt.y];
+  }
+
+
+  const collides = (x, y) => {
+    if (x - radius + sideDelta < 0 || x + radius - sideDelta > mapsize ||
+      y - radius + sideDelta < 0 || y + radius - sideDelta > mapsize) {
+      return rotDelta * 4;
+    }
+
+    let rd = 0;
+    rooms[bot.roomId]
+      .walls
+      // .filter(w => distance(w.x, w.y, bot.x, bot.y) > 100)
+      .some(wall => {
+        const x = wall.x + 25;
+        const y = wall.y + 25;
+        if (distance(x, y, bot.x, bot.y) < radius) {
+          if (bot.vector[0] * y - bot.vector[1] * x > 0)
+            rd = rotDelta;
+          else
+            rd = -rotDelta;
+          return true;
+        }
+      });
+    return rd;
+  };
+
+  const isCol = collides(bot.x, bot.y);
+
+  if (isCol) {
+    bot.speed = 1;
+    bot.vector = rotate(bot.vector, isCol);
+  } else {
+    bot.vector = rotate(
+      bot.vector,
+      bot.vector[0] * (bot.target[1] - bot.y) -
+        bot.vector[1] * (bot.target[0] - bot.x) > 0 ?
+        rotDelta : -rotDelta
+    );
+  }
+
+  // if (collides(bot.x, bot.y)) {
+  //   
+  // } else if (bot.target) {
+
+
+  // }
+
+  if (Math.random() < 0.05) {
+    bot.shoot();
+  }
+  updatePlayer(bot);
 };
 
 setInterval(() => {
@@ -321,26 +479,42 @@ setInterval(() => {
   rooms.forEach((room) => {
     room.players.forEach((player, index) => {
       // console.log(player);
-      updatePlayer(player);
-      sockets.get(player.id).send(JSON.stringify({
-        p: room.players.map(pl => [
-          Math.round(pl.x),
-          Math.round(pl.y),
-          Math.round(Math.atan2(pl.vector[1], pl.vector[0]) * 100) / 100,
-          pl.health,
-          pl.speed,
-          Number(pl.vulnerable),
-          pl.bullets.map(b => [Math.round(b.x), Math.round(b.y)]),
-          pl.id
-        ]),
-        id: index
-      }));
+      if (player.isBot)
+        updateBot(player);
+      else {
+        updatePlayer(player);
+        sockets.get(player.id).send(JSON.stringify({
+          p: room.players.map(pl => [
+            Math.round(pl.x),
+            Math.round(pl.y),
+            Math.round(Math.atan2(pl.vector[1], pl.vector[0]) * 100) / 100,
+            pl.health,
+            pl.speed,
+            Number(pl.vulnerable),
+            pl.bullets.map(b => [Math.round(b.x), Math.round(b.y)]),
+            pl.id
+          ]),
+          // b: room.bots.map(pl => [
+          //   Math.round(pl.x),
+          //   Math.round(pl.y),
+          //   Math.round(Math.atan2(pl.vector[1], pl.vector[0]) * 100) / 100,
+          //   pl.health,
+          //   pl.speed,
+          //   Number(pl.vulnerable),
+          //   pl.bullets.map(b => [Math.round(b.x), Math.round(b.y)]),
+          //   pl.id
+          // ]),
+          id: index
+        }));
+      }
+
     });
+    // room.bots.forEach(bot => {
+    //   updateBot(bot);
+    // });
   });
 
 }, 1000 / 50);
-
-
 
 
 
@@ -363,7 +537,7 @@ io.sockets.on('connection', (socket) => {
         io.sockets.connected[p.id].emit(method);
       });
   };
-
+ 
   const roomid = player.roomId;
   socket.emit('welcome', {
     player,
@@ -377,27 +551,27 @@ io.sockets.on('connection', (socket) => {
   setTimeout(() => {
     io.sockets.emit('updateConnected', room.players);
   }, 1000);
-
+ 
   socket.on('move', (data) => { // move vector
     player.vector = data.vector;
     socket.emit('updatePlayer', player);
   });
-
+ 
   socket.on('updateMe', (data) => {
     const i = room.players.findIndex(pl => pl.id === data.id);
     if (i > -1) {
       room.players[i] = data;
       player = data;
-
+ 
       // io.sockets.emit('updateConnected', room.players);
     }
     // updateRoom('update')
   });
-
+ 
   socket.on('collided', data => {
     player.collides = data.collides;
   });
-
+ 
   socket.on('shoot', () => {
     if (player.speed <= 1)
       player.bullets.push({
@@ -406,30 +580,30 @@ io.sockets.on('connection', (socket) => {
         vector: player.vector
       });
   });
-
+ 
   socket.on('speedup', val => {
     if (val)
       player.speed = 4;
     else
       player.speed = 1;
   });
-
+ 
   socket.on('pickupPowerup', data => {
-
-
-
+ 
+ 
+ 
   });
-
+ 
   socket.on('getMe', () => {
     socket.emit('updatePlayer', player);
   });
-
+ 
   socket.on('updateConnected', () => {
     room.players.forEach(p => {
       io.sockets.connected[p.id].emit('updateConnected', room.players);
     });
   });
-
+ 
   socket.on('disconnect', () => {
     const i = room.players.findIndex(pl => pl.id === player.id);
     if (i > -1) {
@@ -439,11 +613,11 @@ io.sockets.on('connection', (socket) => {
       });
       if (room.players.length < 1)
         rooms.splice(player.roomId, 1);
-
+ 
     }
     console.log(socket.id + ' disconnected.')
   });
-
+ 
   //#region chat
   socket.on('newMsg', data => {
     const nick = data.player.nickname ? data.player.nickname : player.id;
@@ -452,32 +626,32 @@ io.sockets.on('connection', (socket) => {
     io.sockets.emit('newMsg', text);
   });
   //#endregion
-
+ 
 });
-
-
-
+ 
+ 
+ 
 /* -----MAIN SERVER CLOCK----- */
 /*
 setInterval(() => { // sever clock
-
+ 
   rooms.forEach(room => {
     room.players.forEach(player => {
       // console.log(player.collides);
       player.x += player.vector.x * player.speed;
       player.y += player.vector.y * player.speed;
-
+ 
       if (player.x - player.mapsize < 0 || player.x + player.mapsize > mapsize)
         player.vector.x = -player.vector.x;
       if (player.y - player.mapsize < 0 || player.y + player.mapsize > mapsize)
         player.vector.y = -player.vector.y;
-
+ 
       if (player.bullets.length > 0)
         for (let i = 0; i < player.bullets.length; i++) {
           const b = player.bullets[i];
           b.x += b.vector.x * 10;
           b.y += b.vector.y * 10;
-
+ 
           room.players.forEach(p => {
             if (player.id !== p.id && p.vulnerable)
               if (distanse(b.x, b.y, p.x, p.y) < p.mapsize) {
@@ -492,15 +666,15 @@ setInterval(() => { // sever clock
                 // p.deaths++;
                 // player.kills++;
               }
-
+ 
           });
-
+ 
           if (b.x < 0 || b.x > mapsize || b.y < 0 || b.y > mapsize) {
             player.bullets.splice(i, 1);
           }
         }
-
-
+ 
+ 
       // io.sockets.connected[player.id].emit({ players: room.players });
     });
     room.players.forEach(p => {
@@ -509,7 +683,7 @@ setInterval(() => { // sever clock
       });
     });
   });
-
+ 
   // io.sockets.emit('update', { players });
 }, 1000 / 50);
 */
@@ -525,36 +699,35 @@ setInterval(() => {
 const respawn = (player) => {
   player.x = rooms[player.roomId].spawnpoints[randomRange(0, spawnerCount)].x;
   player.y = rooms[player.roomId].spawnpoints[randomRange(0, spawnerCount)].y;
-  player.vector = [0, 0];
+  player.vector = [1, 0];
   // player.deaths++;
-  if (sockets.has(player.id)) {
-    player.vulnerable = false;
-    player.health = 3;
-    setTimeout(() => {
-      // console.log('unshield' + player.id);
-      if (sockets.has(player.id)) {
-        player.vulnerable = true;
-      }
-    }, 2000);
-  }
 
+  player.vulnerable = false;
+  player.health = 3;
+  setTimeout(() => {
+    // console.log('unshield' + player.id);
+    player.vulnerable = true;
+
+  }, 2000);
 
 };
 
+const respawnBot = (bot) => {
+  respawn(bot);
+  bot.health = 3;
+}
+
 const generateWalls = (ind) => {
   for (let i = 0; i < wallCount; i++) {
-    rooms[ind].walls.push(new classes.Wall(randomRange(0, mapsize / 50), randomRange(0, mapsize / 50), 50, 50));
+    rooms[ind].walls.push(new classes.Wall(randomRange(0, mapsize / 50) * 50, randomRange(0, mapsize / 50) * 50, 50, 50));
   }
   for (let i = 0; i < spawnerCount; i++) {
-    const x = randomRange(0, mapsize / 50);
-    const y = randomRange(0, mapsize / 50);
+    const x = randomRange(1, (mapsize - 1) / 50) * 50;
+    const y = randomRange(1, (mapsize - 1) / 50) * 50;
     if (rooms[ind].walls.some(wall => (wall.x === x) && (wall.y === y)))
       i--;
     else
-      rooms[ind].spawnpoints.push({
-        x: x * 50 + 25,
-        y: y * 50 + 25
-      });
+      rooms[ind].spawnpoints.push({ x, y });
   }
 };
 
@@ -569,23 +742,24 @@ const spawnPowerup = () => {
     else
       type = 'heart';
     let pu;
-    const collides = (p) => {
+    const collides = (x, y) => {
       for (let i = 0; i < walls.length; i++) {
-        if (walls[i].x === p.x && walls[i].y === p.y) {
+        if (walls[i].x === x && walls[i].y === y) {
           return true;
         }
       };
       for (let i = 0; i < powerups.length; i++) {
-        if (powerups[i].x === p.x && powerups[i].y === p.y) {
+        if (powerups[i].x === x && powerups[i].y === y) {
           return true;
         }
       };
       return false;
     }
-    pu = new classes.Powerup(randomRange(0, mapsize / 50), randomRange(0, mapsize / 50), type);
-    if (!collides(pu))
-      rooms[id].powerups.push(pu);
-    rooms[id].players.forEach(p => {
+    const px = randomRange(0, mapsize / 50) * 50;
+    const py = randomRange(0, mapsize / 50) * 50;
+    if (!collides(px, py))
+      rooms[id].powerups.push(new classes.Powerup(px, py, type));
+    rooms[id].players.filter(p => !p.isBot).forEach(p => {
       sockets.get(p.id).send(JSON.stringify({ powerups: rooms[id].powerups }));
     })
   }
