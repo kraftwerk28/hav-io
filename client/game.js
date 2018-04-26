@@ -124,6 +124,7 @@ const auth = () => {
 if (typeof window.orientation !== 'undefined') {
   document.getElementById('authentification').disabled = true;
   document.getElementById('about').textContent = 'Sorry, this game is for desktops only yet((';
+  document.getElementById('about').style.backgroundColor = 'crimson';
 }
 
 const sfx = {
