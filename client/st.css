@@ -154,8 +154,8 @@ body {
   }
 }
 
-#loader {
-  visibility: hidden;
+#loader div {
+  /* visibility: hidden; */
   position: absolute;
   left: 0px;
   margin: auto;
