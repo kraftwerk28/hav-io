@@ -156,14 +156,16 @@ body {
 
 #loader {
   visibility: hidden;
+  position: absolute;
+  left: 0px;
   margin: auto;
   width: 50px;
   height: 50px;
   border-radius: 50%;
   border-style: solid;
   border-top-color: transparent;
-  border-bottom-color: transparent;
-  border-left-color: blueviolet;
+  border-bottom-color: blueviolet;
+  border-left-color: transparent;
   border-right-color: blueviolet;
   border-width: 10px;
   animation-name: loader;
@@ -174,9 +176,17 @@ body {
 
 @keyframes loader {
   0% {
-    transform: rotate(0deg);
+    /* border-top-color: blueviolet;
+    border-bottom-color: blueviolet;
+    border-left-color: transparent;
+    border-right-color: transparent; */
+    transform: rotate(0turn);
   }
   100% {
+    /* border-top-color: transparent;
+    border-bottom-color: transparent;
+    border-left-color: blueviolet;
+    border-right-color: blueviolet; */
     transform: rotate(1turn);
   }
 }
