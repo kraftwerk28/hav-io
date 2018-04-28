@@ -737,8 +737,9 @@ const generateWalls = (ind) => {
     rooms[ind].walls.push(new classes.Wall(randomRange(0, mapsize / 50) * 50, randomRange(0, mapsize / 50) * 50, 50, 50));
   }
   for (let i = 0; i < spawnerCount; i++) {
-    const x = randomRange(1, (mapsize - 1) / 50) * 50;
-    const y = randomRange(1, (mapsize - 1) / 50) * 50;
+    const x = randomRange(1, (mapsize / 50) - 1) * 50;
+    const y = randomRange(1, (mapsize / 50) - 1) * 50;
+    console.log(x, y);
     if (rooms[ind].walls.some(wall => (wall.x === x) && (wall.y === y)))
       i--;
     else

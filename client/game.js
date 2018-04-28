@@ -541,7 +541,7 @@ const processData = (data) => {
 };
 
 const socketize = () => {
-  socket = new WebSocket(testing ? 'ws://192.168.0.101:8080/' :
+  socket = new WebSocket(testing ? 'ws://192.168.1.104:8080/' :
     'ws://kraftwerk28.pp.ua/');
   socket.onmessage = (ev) => {
     const data = JSON.parse(ev.data);
