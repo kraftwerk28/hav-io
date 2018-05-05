@@ -103,6 +103,12 @@ window.onscroll = () => {
   canvOffset = canvas.getBoundingClientRect();
 };
 
+window.onerror = (e) => {
+  console.error(e);
+  if (!testing)
+    socket.send(JSON.stringify({ error: e }));
+};
+
 const overlay = document.getElementById('authoverlay');
 const auth = () => {
   document.getElementById('loader').style.visibility = 'visible';

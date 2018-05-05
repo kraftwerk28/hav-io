@@ -256,6 +256,10 @@ ws.on('request', (req) => {
         }));
       }
     }
+
+    if (data.error) {
+      fs.appendFile('errorlog.txt', data.error + '\n', (err) => { });
+    }
   };
 
   socket.on('message', (event) => {
