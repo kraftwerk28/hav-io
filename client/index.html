@@ -3,8 +3,8 @@
 
 <head>
   <title>havio</title>
-  <meta name="viewport" content="initial-scale=0.5, user-scalable=no">
-  <meta name="theme-color" content="#0D0">
+  <meta name="viewport" content="width=device-width, initial-scale=0.7, user-scalable=no">
+  <meta name="theme-color" content="#000">
 
   <meta property="og:url" content="http://kraftwerk28.pp.ua/">
   <meta property="og:type" content="website">
@@ -14,6 +14,9 @@
   <!-- <meta property="og:image:width" content="256">
   <meta property="og:image:height" content="256"> -->
 
+  <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css?family=Roboto+Mono" rel="stylesheet">
+
   <link rel="stylesheet" href="./style28.css">
   <link rel="stylesheet" href="./st.css">
   <link rel="shortcut icon" href="./img/favicon.png">
@@ -22,51 +25,80 @@
 <body>
   <div id="authoverlay">
     <div id="hav-io" class="header">hav-io</div>
-    <div style="width: fit-content; margin: auto;">
-      <input id="nick" type="text" class="circle inputText" placeholder="your nickname...">
-      <button id="authentification" class="circle circleButton" onclick="auth();">Play!
-        <canvas class="buttonCanv"></canvas>
-      </button>
-      <br>
-      <textarea id="about" class="circle textArea" style="text-align: center; resize: none; width: 406px; height: 150px" readonly>
+
+    <table style="margin: auto; width: fit-content;">
+      <tr>
+        <td>
+          <input id="nick" type="text" class="circle inputText" placeholder="your nickname...">
+          <button id="authentification" class="circle circleButton" onclick="auth();">Play!
+            <canvas class="buttonCanv"></canvas>
+          </button>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <textarea id="about" class="circle textArea" readonly>
 left click: shoot
 right click: accelerate
 
 kill players to be coolest
 gl)
-      </textarea>
+          </textarea>
+        </td>
+      </tr>
+    </table sty>
+
+    <div style="width: fit-content; margin: auto;">
       <div id="loader" style="visibility:hidden; position: relative; margin: auto; transform: translateX(calc(50% - 35px))">
         <div></div>
         <div style="animation-direction: reverse; animation-duration: 0.5s"></div>
       </div>
-
+    </div>
+    <div id="mob" style="display: none">
+      <img id="mobLandscape" src="img/mobLandscape.png">
+      <div>Play in landscape for better experience</div>
     </div>
   </div>
-  <div id="kills" class="header" style="float: left; color: limegreen; font-size: xx-large">kills:</div>
-  <div id="deaths" class="header" style="float: right; color: tomato; font-size: xx-large">deaths:</div>
-  <div id="heartContainer">
-    <img class="heart" src="./img/heart.png" width="50" height="50">
-    <img class="heart" src="./img/heart.png" width="50" height="50">
-    <img class="heart" src="./img/heart.png" width="50" height="50">
-  </div>
-  <div id="right">
-    <div id="roomId">room id:</div>
-    <div id="connected">
+
+  <div id="overlay" style="position: absolute; top: 0px; left: 0px; right: 0px; pointer-events: none">
+    <div style="float: left; pointer-events: none;">
+      <div id="kills" class="header" style="color: limegreen; font-size: xx-large">kills:</div>
+      <div id="heartContainer">
+        <img class="heart" src="./img/heart.png" width="50" height="50">
+        <img class="heart" src="./img/heart.png" width="50" height="50">
+        <img class="heart" src="./img/heart.png" width="50" height="50">
+      </div>
     </div>
-    <br>
-    <!-- <button class="circle circleButton" style="width: 230px; height: 50px;" onclick="reload()">
-      Restart
-      <canvas class="buttonCanv"></canvas>
-    </button> -->
 
-    <br>
-
+    <div style="float: right; pointer-events: none;">
+      <div id="deaths" class="header" style="color: tomato; font-size: xx-large">deaths:</div>
+      <div>
+        <div id="roomId">room id:</div>
+        <div id="connected">
+        </div>
+      </div>
+    </div>
   </div>
+
+
+
   <div id="down">
+    <button id="mobShoot" class="circle circleButton" style="width: 50px; height: 50px; min-width: 50px; background-size: contain; background-image: url('./img/Shoot.png'); display: none;">
+      <canvas class="buttonCanv"></canvas>
+    </button>
+    <br>
+    <button id="mobSpeedup" class="circle circleButton" style="width: 50px; height: 50px; min-width: 50px; background-size: contain; background-image: url('./img/Speedup.png'); display: none;">
+      <canvas class="buttonCanv"></canvas>
+    </button>
+    <br>
     <button id="mute" class="circle circleButton" style="width: 50px; height: 50px; min-width: 50px; background-size: contain"
       onclick="mute()">
       <canvas class="buttonCanv"></canvas>
     </button>
+    <!-- <button id="fullScreen" class="circle circleButton" style="width: 50px; height: 50px; min-width: 50px; background-size: contain"
+      onclick="goFullScreen();">
+      <canvas class="buttonCanv"></canvas>
+    </button> -->
   </div>
   <canvas id="minimap" width="100px" height="100px"></canvas>
   <canvas id="game"></canvas>

@@ -1,10 +1,14 @@
 body {
   /* position: fixed; */
   color: white;
-  font-family: 'Consolas', 'Courier New', Courier, monospace;
+  font-family: 'Roboto Mono', monospace;
   background-color: rgba(0, 0, 0, 0.4);
   height: 0;
   overflow: hidden;
+}
+
+body * {
+  font-family: 'Roboto Mono', monospace;
 }
 
 #game {
@@ -17,6 +21,7 @@ body {
   top: 0;
   left: 0;
   animation-duration: 1s;
+  cursor: url(img/cursor.png) 16 16, auto;
 }
 
 #chatButton {
@@ -33,13 +38,6 @@ body {
   text-align: right;
 }
 
-#right {
-  position: absolute;
-  pointer-events: none;
-  right: 0px;
-  top: 40px;
-}
-
 #down {
   position: absolute;
   pointer-events: none;
@@ -51,7 +49,6 @@ body {
 #heartContainer {
   position: absolute;
   width: 0px;
-  top: 40px;
   pointer-events: none;
 }
 
@@ -81,7 +78,13 @@ body {
   animation-duration: 1s;
   animation-name: overlay;
   animation-play-state: paused;
+  text-align: center;
 }
+
+#about {
+  text-align: center; resize: none; width: calc(100% - 40px); height: 150px;
+}
+
 
 #minimap {
   position: absolute;
@@ -191,6 +194,28 @@ body {
   }
 }
 
+@keyframes landscape {
+  0% {
+    transform: rotate(0deg);
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(-90deg);
+    opacity: 0;
+  }
+}
+
+#mobLandscape {
+  margin: auto;
+  background-image: url('img/mobLandscape.png');
+  animation-name: landscape;
+  animation-duration: 2s;
+  animation-iteration-count: infinite;
+  animation-timing-function: ease;
+}
+
 image {
   image-rendering: pixelated;
 }
@@ -210,7 +235,6 @@ td {
 }
 
 .header {
-  font-family: "Lucida Console", Monaco, monospace;
   color: deeppink;
   font-size: 300%;
   text-shadow: 2px 2px 3px gray;

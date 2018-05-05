@@ -31,6 +31,7 @@ let size = 1500;
 let canvasCenter = {};
 let loaded = false;
 let smoothness = 0.2;
+let isMobile = false;
 
 const viewport = {
   x: 0,
@@ -106,27 +107,27 @@ const overlay = document.getElementById('authoverlay');
 const auth = () => {
   document.getElementById('loader').style.visibility = 'visible';
   const check = () => {
-    if (!loaded)
+    if (!loaded) {
       setTimeout(() => {
         check();
-      }, 100);
-    else {
+      }, 500);
+    } else {
       overlay.style.animationPlayState = 'running';
+      // overlay.style.display = 'none';
       socketize();
       sfx.soundtrack.play();
     }
   };
   check();
-
 };
 
 //#region frontend
-if (typeof window.orientation !== 'undefined') {
-  document.getElementById('authentification').disabled = true;
-  document.getElementById('about').textContent = 'Sorry, this game is for desktops only yet((';
-  document.getElementById('about').style.backgroundColor = 'crimson';
-}
-
+const _play = Audio.prototype.play;
+Audio.prototype.play = function () {
+  if (!isMobile) {
+    _play.apply(this);
+  }
+};
 const sfx = {
   die: new Audio('./sfx/Death.wav'),
   shoot: new Audio('./sfx/Shoot.wav'),
@@ -177,9 +178,9 @@ ctx.imageSmoothingEnabled = false;
 canvas.width = window.innerWidth;//900;
 canvas.height = window.innerHeight;//550;
 ctx.strokeStyle = 'yellow';
-ctx.font = '10px Consolas';
+ctx.font = '10px Roboto Mono';
 ctx.textAlign = 'center';
-
+ctx.lineCap = 'round';
 
 canvas.onmousemove = (e) => {
   const x = e.x - canvOffset.x;
@@ -273,11 +274,84 @@ const screenEffects = {
 };
 //#endregion
 
+const mobilize = () => {
+  isMobile = true;
+  let startX = 0;
+  let startY = 0;
+  const mobSpeedup = document.getElementById('mobSpeedup');
+  const mobShoot = document.getElementById('mobShoot');
+  document.getElementById('mute').style.display = 'none';
+  mobSpeedup.style.display = 'inline';
+  mobShoot.style.display = 'inline';
+  // speedup(true);
+  mobSpeedup.ontouchstart = () => {
+    speedup(true);
+  };
+  mobSpeedup.ontouchend = () => {
+    speedup(false);
+  };
+  mobShoot.ontouchstart = () => {
+    shoot();
+  };
+  // mobSpeedup.style.backgroundImage
+  canvas.ontouchstart = (e) => {
+    if (e.touches.length < 2) {
+
+      startX = e.changedTouches[0].clientX;
+      startY = e.changedTouches[0].clientY;
+    }
+    else
+      shoot();
+  };
+  canvas.ontouchmove = (e) => {
+    const x = e.changedTouches[0].clientX - canvOffset.x;
+    const y = e.changedTouches[0].clientY - canvOffset.y;
+    const vec = [x - startX/* - player.x + viewport.x*/, y - startY/* - player.y + viewport.y*/];
+    const l = Math.sqrt(Math.pow(vec[0], 2) + Math.pow(vec[1], 2));
+    socket.send(JSON.stringify({ vec: [...vec.map(v => v / l)] }));
+
+    ctx.strokeStyle = 'lime';
+
+    ctx.lineWidth = 5;
+    ctx.moveTo(startX, startY);
+    ctx.lineTo(x, y);
+    ctx.stroke();
+  };
+  // document.body.style.transform = 'rotate(90deg)';
+  // document.body.style.position = 'absolute';
+  // document.body.style.right = '0px';
+  // document.body.style.top = '0px';
+};
+
+if (typeof window.orientation !== 'undefined') {
+  if (window.orientation === 0 || window.orientation === 180)
+    document.getElementById('mob').style.display = 'inline';
+  // document.getElementById('authentification').disabled = true;
+  // document.getElementById('about').textContent = 'Sorry, this game is for desktops only yet((';
+  // document.getElementById('about').style.backgroundColor = 'crimson';
+
+  document.getElementById('authentification').onclick = () => {
+    auth();
+    document.getElementById('mob').style.display = 'none';
+    mobilize();
+    setTimeout(() => {
+      try {
+        document.body.requestFullscreen();
+      } catch (error) {
+        document.body.webkitRequestFullscreen();
+      }
+      loaded = true;
+    }, 500);
+  };
+  document.getElementById('overlay').children[0].style.transform = 'scale(0.5) translate(-50%, -50%)';
+  document.getElementById('overlay').children[1].style.transform = 'scale(0.5) translate(50%, -50%)';
+}
 
 const render = (data) => {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   minictx.clearRect(0, 0, minimap.width, minimap.height);
   minictx.strokeRect(0, 0, minimap.width, minimap.height);
+  ctx.lineWidth = 1;
   // console.log(data);
   // viewport.center(player.x, player.y);
 
@@ -559,110 +633,6 @@ const socketize = () => {
   };
 };
 
-const initSocket = () => {
-  socket.on('welcome', data => {
-    player = data.player;
-    document.getElementById('hav-io').textContent = `hav-io   room id: ${player.roomId}`;
-    walls = data.room.walls;
-    powerups = data.room.powerups;
-    size = data.size
-    chatField.textContent = data.messages;
-    updateHealth();
-    setTimeout(() => setInterval(() => {
-      calcCollisions();
-      viewport.center(player.x, player.y);
-    }, 1000 / 50), 10);
-  });
-
-  socket.on('update', data => {
-
-  });
-
-  socket.on('updatePlayer', data => {
-    document.getElementById('ping').textContent = 'ping: ' + (Date.now() - pingStart);
-
-    player = data;
-    if (awaitFunc) {
-      awaitFunc();
-      awaitFunc = null;
-    }
-  });
-
-  socket.on('updatePowerups', data => {
-    powerups = data;
-  });
-
-  socket.on('updateConnected', data => {
-    let str = '';
-    data.forEach(pl => {
-      if (pl.nickname && pl.nickname.length > 0) {
-        str += `${pl.nickname}\r\n`;
-      } else {
-        str += `player_${pl.id}\r\n`;
-      }
-    });
-    connected.textContent = str;
-  });
-
-  socket.on('gameOver', () => {
-    sfx.die.play();
-    deaths++;
-    canvas.classList = '';
-    setTimeout(() => {
-      canvas.classList.add('animhit')
-    }, 100);
-    canvas.style.animationPlayState = 'running';
-    updatescore();
-  });
-
-  socket.on('hitted', () => {
-    sfx.hit.play();
-    syncEmit(() => {
-      canvas.classList = '';
-      // canvas.classList.remove('animhit');
-      setTimeout(() => {
-        canvas.classList.add('animhit')
-      }, 100);
-
-      canvas.style.animationPlayState = 'running';
-      updateHealth();
-    });
-  });
-
-  socket.on('healthup', () => {
-    canvas.classList = '';
-    setTimeout(() => {
-      canvas.classList.add('animheal')
-    }, 100);
-    canvas.style.animationPlayState = 'running';
-    syncEmit(() => {
-      updateHealth();
-    });
-  })
-
-  socket.on('frag', () => {
-    kills++;
-    updatescore();
-  });
-
-  socket.on('newMsg', data => {
-    chatField.textContent += data;
-  });
-
-  setInterval(() => {
-    pingStart = Date.now();
-    socket.emit('getMe');
-    socket.emit('move', { vector: movevector });
-    console.log('mv');
-  }, 50);
-
-  syncEmit = (callback) => {
-    socket.emit('getMe');
-    awaitFunc = callback;
-  };
-};
-
-
 const shoot = () => {
   sfx.shoot.play();
   socket.send('{"shoot":1}');
@@ -780,6 +750,10 @@ const calcCollisions = () => {
     // player.collides = false;
   }
 
+};
+
+const goFullScreen = () => {
+  document.body.webkitRequestFullScreen();
 };
 
 const command = (c) => {

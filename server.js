@@ -163,7 +163,7 @@ const createPlayer = (isBot) => {
     new classes.Bot(++plCount, rooms.length),
     new classes.Bot(++plCount, rooms.length)
   ));
-  console.log('new room created');
+  // console.log('new room created');
   generateWalls(rooms.length - 1);
   return e();
 };
@@ -202,7 +202,7 @@ const ws = new WebSocket({
 
 ws.on('request', (req) => {
   const socket = req.accept('', req.origin);
-  // console.log(socket.remoteAddress + ' connected.');
+  console.log(socket.remoteAddress + ' connected.');
   let player = createPlayer();
   // console.log('player created...');
   sockets.set(player.id, socket);
@@ -269,7 +269,7 @@ ws.on('request', (req) => {
     // sockets.splice(sockets.findIndex(s => s.id === socket.id), 1);
     room.players.splice(i, 1);
     if (room.players.filter(p => !p.isBot).length < 1) {
-      console.log('room deleted');
+      // console.log('room deleted');
       rooms.splice(player.roomId, 1);
     }
     // if (room.players.length < 1)
@@ -739,7 +739,6 @@ const generateWalls = (ind) => {
   for (let i = 0; i < spawnerCount; i++) {
     const x = randomRange(1, (mapsize / 50) - 1) * 50;
     const y = randomRange(1, (mapsize / 50) - 1) * 50;
-    console.log(x, y);
     if (rooms[ind].walls.some(wall => (wall.x === x) && (wall.y === y)))
       i--;
     else
