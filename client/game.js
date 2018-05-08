@@ -111,16 +111,15 @@ window.onscroll = () => {
   canvOffset = canvas.getBoundingClientRect();
 };
 
-window.onerror = (e) => {
+window.onerror = (msg, url, line, column) => {
   // console.error(e);
   if (!testing) {
     if (socket && socket.readyState === 1)
       socket.send(JSON.stringify({
-        error: new Date() + '\n' + navigator.userAgent + '\n\t' + e + '\n\n'
+        error: `${new Date()}\n${navigator.userAgent}\n\t${line}:${column}\t${e}\n\n`
       }));
     else
-      sendHTTP(new Date() + '%0A' + navigator.userAgent +
-        '%0A%09' + e + '%0A%0A');
+      sendHTTP(`${new Date()}$0A${navigator.userAgent}%0A%09${line}:${column}$09${e}%0A%0A`);
   }
 
 };
