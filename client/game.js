@@ -369,7 +369,18 @@ if (typeof window.orientation !== 'undefined') {
       try {
         document.body.requestFullscreen();
       } catch (error) {
-        document.body.webkitRequestFullscreen();
+        try {
+          document.body.webkitRequestFullscreen();
+        } catch (error) {
+          const m1 = document.createElement('meta');
+          m1.name = 'apple-mobile-web-app-capable';
+          m1.content = 'yes';
+          const m2 = document.createElement('meta');
+          m2.name = 'apple-mobile-web-app-status-bar-style';
+          m2.content = 'black-translucent';
+          document.head.appendChild(m1);
+          document.head.appendChild(m2);
+        }
       }
       loaded = true;
     }, 500);
