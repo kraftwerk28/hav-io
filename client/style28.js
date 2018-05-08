@@ -1,4 +1,12 @@
 (() => {
+  const btns = document.getElementsByClassName('circleButton');
+
+  Array.prototype.forEach.call(btns, b => {
+    const canv = document.createElement('canvas');
+    canv.className = 'buttonCanv';
+    b.appendChild(canv);
+  });
+
   const circleCanvases = document.getElementsByClassName('buttonCanv');
   // const circleButtons = document.getElementById('circleButton');
 

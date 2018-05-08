@@ -30,20 +30,15 @@
       <tr>
         <td>
           <input id="nick" type="text" class="circle inputText" placeholder="your nickname...">
-          <button id="authentification" class="circle circleButton" onclick="auth();">Play!
-            <canvas class="buttonCanv"></canvas>
-          </button>
+          <button id="authentification" class="circle circleButton" onclick="auth();">Play!</button>
         </td>
       </tr>
       <tr>
         <td>
-          <textarea id="about" class="circle textArea" readonly>
-left click: shoot
-right click: accelerate
-
-kill players to be coolest
-gl)
-          </textarea>
+          <div id="about" class="circle textArea" readonly>left click: shoot
+            <br> right click: accelerate
+            <br> kill players to be coolest; gl)
+          </div>
         </td>
       </tr>
     </table sty>
@@ -84,17 +79,17 @@ gl)
 
   <div id="down">
     <button id="mobShoot" class="circle circleButton" style="width: 50px; height: 50px; min-width: 50px; background-size: contain; background-image: url('./img/Shoot.png'); display: none;">
-      <canvas class="buttonCanv"></canvas>
     </button>
     <br>
     <button id="mobSpeedup" class="circle circleButton" style="width: 50px; height: 50px; min-width: 50px; background-size: contain; background-image: url('./img/Speedup.png'); display: none;">
-      <canvas class="buttonCanv"></canvas>
     </button>
     <br>
     <button id="mute" class="circle circleButton" style="width: 50px; height: 50px; min-width: 50px; background-size: contain"
       onclick="mute()">
-      <canvas class="buttonCanv"></canvas>
     </button>
+    <!-- <button id="upgradeBtn" class="circle circleButton" style="height: 50px; min-width: 50px;">Upgrade
+    </button> -->
+    <!-- <div id="upgradeMenu" class="circle"></div> -->
     <!-- <button id="fullScreen" class="circle circleButton" style="width: 50px; height: 50px; min-width: 50px; background-size: contain"
       onclick="goFullScreen();">
       <canvas class="buttonCanv"></canvas>
@@ -103,7 +98,6 @@ gl)
   <canvas id="minimap" width="100px" height="100px"></canvas>
   <canvas id="game"></canvas>
 
-  <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.4/socket.io.js"></script> -->
   <script src="./game.js"></script>
   <script src="./style28.js"></script>
 

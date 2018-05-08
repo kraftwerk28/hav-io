@@ -9,7 +9,6 @@
   "author": "kraftwerk28",
   "license": "MIT",
   "dependencies": {
-    "socket.io": "^2.1.0",
     "websocket": "^1.0.25"
   },
   "devDependencies": {},

@@ -3,6 +3,7 @@
 const testing = !1;
 const fs = require('fs');
 const http = require('http');
+const qs = require('querystring');
 const WebSocket = require('websocket').server;
 const classes = require('./classes');
 const files = {};
@@ -37,6 +38,13 @@ readR('client/', '').forEach(f => {
 
 const route = (url) => {
   if (url === '/') return './client/index.html';
+  if (url.startsWith('/err')) {
+    fs.appendFile(
+      'errorlog.txt',
+      qs.unescape(url.split('=')[1]),
+      (err) => { if (err) throw err }
+    );
+  }
   return './client' + url;
 };
 
@@ -64,13 +72,6 @@ const getUsage = (value) => {
   }
   return res;
 };
-
-// setInterval(() => {
-//   startUsage = process.cpuUsage(startUsage)
-//   process.stdout.clearLine();
-//   process.stdout.cursorTo(0);
-//   process.stdout.write(getUsage(startUsage.user));
-// }, 1000)
 
 const rooms = [];
 const sockets = new Map();

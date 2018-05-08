@@ -11,6 +11,30 @@ body * {
   font-family: 'Roboto Mono', monospace;
 }
 
+image {
+  image-rendering: crisp-edges;
+}
+
+audio {
+  display: none;
+}
+
+table {
+  /* display: block; */
+  width: 100%;
+}
+
+td {
+  text-align: center;
+  vertical-align: top;
+}
+
+a {
+  color: whitesmoke;
+  width: 100%;
+  height: 100%;
+}
+
 #game {
   background-image: url('./img/floor.png');
   /* margin: 10px; */
@@ -36,14 +60,6 @@ body * {
 #left {
   position: relative;
   text-align: right;
-}
-
-#down {
-  position: absolute;
-  pointer-events: none;
-  bottom: 0px;
-  left: 0px;
-  right: 0px;
 }
 
 #heartContainer {
@@ -81,10 +97,39 @@ body * {
   text-align: center;
 }
 
-#about {
-  text-align: center; resize: none; width: calc(100% - 40px); height: 150px;
+#down {
+  position: absolute;
+  pointer-events: none;
+  bottom: 0px;
+  left: 0px;
+  right: 0px;
 }
 
+#upgrade {
+  display: inline;
+  background-color: rgba(100, 0, 100, 0.4);
+  transition-duration: 0.5s;
+  position: absolute;
+  /* top: 52px; */
+}
+
+#upgradeBtn {
+  /* position: absolute; */
+  margin: 0px;
+}
+
+#upgradeMenu {
+  background-color: aqua;
+  margin: 0px
+}
+
+#about {
+  text-align: center;
+  resize: none;
+  height: 150px;
+  white-space: pre-line;
+  color: slateblue;
+}
 
 #minimap {
   position: absolute;
@@ -216,24 +261,6 @@ body * {
   animation-timing-function: ease;
 }
 
-image {
-  image-rendering: pixelated;
-}
-
-audio {
-  display: none;
-}
-
-table {
-  /* display: block; */
-  width: 100%;
-}
-
-td {
-  text-align: center;
-  vertical-align: top;
-}
-
 .header {
   color: deeppink;
   font-size: 300%;
@@ -246,10 +273,4 @@ td {
 #connected {
   font-size: large;
   /* font-family: 'Consolas', 'Courier New', Courier, monospace; */
-}
-
-a {
-  color: whitesmoke;
-  width: 100%;
-  height: 100%;
 }

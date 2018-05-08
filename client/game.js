@@ -1,7 +1,9 @@
 'use strict';
 
 const testing = !1;
-let socket;
+const testURL = 'ws://192.168.1.104:8080/';
+const nativeURL = 'ws://kraftwerk28.pp.ua/';
+let socket = null;
 
 let syncEmit = (callback) => { awaitFunc = callback };
 let player = {
@@ -59,6 +61,12 @@ let muted = false;
 let walls = [];
 let powerups = [];
 
+const sendHTTP = (data) => {
+  const xhr = new XMLHttpRequest();
+  xhr.open('POST', 'err=' + data.toString(), false);
+  xhr.send();
+};
+
 window.onload = () => {
   muteButton.style.backgroundImage = 'url(\'./img/Mute.png\')';
   const n = localStorage.getItem('havionick');
@@ -86,7 +94,7 @@ window.onunload = () => {
   localStorage.setItem('haviokills', kills);
 };
 
-window.oncontextmenu = () => false;
+window.oncontextmenu = () => testing;
 
 window.onwheel = (e) => {
   e.preventDefault();
@@ -104,9 +112,17 @@ window.onscroll = () => {
 };
 
 window.onerror = (e) => {
-  console.error(e);
-  if (!testing)
-    socket.send(JSON.stringify({ error: e }));
+  // console.error(e);
+  if (!testing) {
+    if (socket && socket.readyState === 1)
+      socket.send(JSON.stringify({
+        error: new Date() + '\n' + navigator.userAgent + '\n\t' + e + '\n\n'
+      }));
+    else
+      sendHTTP(new Date() + '%0A' + navigator.userAgent +
+        '%0A%09' + e + '%0A%0A');
+  }
+
 };
 
 const overlay = document.getElementById('authoverlay');
@@ -128,6 +144,7 @@ const auth = () => {
 };
 
 //#region frontend
+// sound init
 const _play = Audio.prototype.play;
 Audio.prototype.play = function () {
   if (!isMobile) {
@@ -149,9 +166,6 @@ sfx.soundtrack.oncanplaythrough = () => { loaded = true }
 
 const heartContainer = document.getElementById('heartContainer');
 
-// const chatField = document.getElementById('chatField');
-// const chatInput = document.getElementById('chatInput');
-
 const muteButton = document.getElementById('mute');
 const connected = document.getElementById('connected');
 const _roomId = document.getElementById('roomId');
@@ -160,23 +174,33 @@ nicknameinput.oninput = (e) => {
   localStorage.setItem('havionick', nicknameinput.value);
   player.nickname = nicknameinput.value;
 };
-// chatInput.onkeydown = (e) => {
-//   const str = clearSpaces(chatInput.value);
-//   if (e.keyCode === 13 && str.length > 0) {
-//     e.preventDefault();
-//     // socket.emit('newMsg', {
-//     //   player,
-//     //   msg: str
-//     // });
-//     chatInput.value = '';
-//   }
-// };
 
+/*
+let upMenuFlag = false;
+const upgrader = document.getElementById('upgradeMenu');
+const upgradeBnt = document.getElementById('upgradeBtn');
+upgradeBnt.style.top = '0px';
+upgrader.style.top = upgradeBnt.style.top;
+upgrader.style.left = upgradeBnt.style.left;
+upgradeBnt.onclick = () => {
+  upMenuFlag = !upMenuFlag;
+  if (upMenuFlag) {
+    upgradeBtn.style.top = '-50px';
+    upgradeBtn.style.backgroundColor = 'green';
+  } else {
+    upgradeBtn.style.top = '0px';
+    upgradeBtn.style.backgroundColor = 'orange';
+  }
+};
+*/
+
+// minimap
 const minimap = document.getElementById('minimap');
 const minictx = minimap.getContext('2d');
 minictx.fillStyle = 'lime';
 minictx.strokeStyle = 'lime';
 
+// main canvas
 const canvas = document.getElementById('game');
 canvas.style.animationPlayState = 'paused';
 const ctx = canvas.getContext('2d');
@@ -188,6 +212,7 @@ ctx.font = '10px Roboto Mono';
 ctx.textAlign = 'center';
 ctx.lineCap = 'round';
 
+// canvas event binding
 canvas.onmousemove = (e) => {
   const x = e.x - canvOffset.x;
   const y = e.y - canvOffset.y;
@@ -236,9 +261,9 @@ canvas.onmouseup = (e) => {
   }
 }
 
+// images init
 const wallimg = new Image();
 wallimg.src = './img/brick.png';
-// wallimg.style = 'image-rendering: pixelated';
 const shield_img = new Image();
 shield_img.src = './img/shield_powerup.png';
 const heart_img = new Image();
@@ -353,6 +378,10 @@ if (typeof window.orientation !== 'undefined') {
   document.getElementById('overlay').children[1].style.transform = 'scale(0.5) translate(50%, -50%)';
 }
 
+//#region pre-render init
+// const grad1 = ctx.createRadialGradient(x, y, 0, x, y, s * 4);
+//#endregion
+
 const render = (data) => {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   minictx.clearRect(0, 0, minimap.width, minimap.height);
@@ -380,7 +409,6 @@ const render = (data) => {
       grad.addColorStop(0, 'white');
       grad.addColorStop(1, 'transparent');
       const angle = p[2];
-
 
       ctx.fillStyle = grad;
 
@@ -456,12 +484,12 @@ const render = (data) => {
       x -= viewport.x;
       y -= viewport.y;
 
-      const mygrad = ctx.createRadialGradient(x, y, 0, x, y, s * 3);
+      const mygrad = ctx.createRadialGradient(x, y, 0, x, y, s * 4);
       mygrad.addColorStop(0, ctx.fillStyle);
       mygrad.addColorStop(1, 'transparent');
       ctx.fillStyle = mygrad;
       // ctx.beginPath();
-      ctx.arc(x, y, s * 3, 0, Math.PI * 2);
+      ctx.arc(x, y, s * 4, 0, Math.PI * 2);
       ctx.fill();
     }
   }
@@ -621,8 +649,8 @@ const processData = (data) => {
 };
 
 const socketize = () => {
-  socket = new WebSocket(testing ? 'ws://192.168.1.104:8080/' :
-    'ws://kraftwerk28.pp.ua/');
+  socket = new WebSocket(testing ? testURL : nativeURL);
+
   socket.onmessage = (ev) => {
     const data = JSON.parse(ev.data);
     processData(data);
@@ -635,7 +663,15 @@ const socketize = () => {
   };
 
   socket.onclose = (event) => {
-    console.log('Connection closed. Code: ' + event.code)
+    console.log('Connection closed. Code: ' + event.code);
+    if (event.code === 1006)
+      setTimeout(() => {
+        socketize();
+      }, 500);
+  };
+
+  socket.onerror = (event) => {
+    console.warn(event);
   };
 };
 
