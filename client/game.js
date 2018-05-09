@@ -107,8 +107,9 @@ window.onresize = (e) => {
   viewport.init(canvas.width, canvas.height);
 }
 
-window.onscroll = () => {
-  canvOffset = canvas.getBoundingClientRect();
+window.onscroll = (e) => {
+  e.preventDefault();
+  // canvOffset = canvas.getBoundingClientRect();
 };
 
 window.onerror = (msg, url, line, column) => {
