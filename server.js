@@ -1,14 +1,15 @@
 'use strict';
 
-const testing = !1;
-const fs = require('fs');
-const http = require('http');
-const qs = require('querystring');
-const WebSocket = require('websocket').server;
-const classes = require('./classes');
-const files = {};
-// let messages = '';
-const port = testing ? 8080 : 80;
+const testing = !1,
+  fs = require('fs'),
+  http = require('http'),
+  https = require('https'),
+  qs = require('querystring'),
+  WebSocket = require('websocket').server,
+  classes = require('./classes'),
+  files = {},
+  port = testing ? 8080 : 443;
+
 let startUsage = process.cpuUsage();
 
 //#region static routing and server init
@@ -37,7 +38,7 @@ readR('client/', '').forEach(f => {
 });
 
 const route = (url) => {
-  if (url === '/') return './client/index.html';
+  if (url === '/' || url === '/nosocket') return './client/index.html';
   if (url.startsWith('/err')) {
     fs.appendFile(
       'errorlog.txt',
@@ -48,12 +49,23 @@ const route = (url) => {
   return './client' + url;
 };
 
-const server = http.createServer((req, res) => {
-  // const data = files[req.url] || files['/'];
-  res.writeHead(200);
-  fs.readFile(route(req.url), (err, data) => { res.end(data) });
-  // res.end(data);
-});
+if (testing) {
+  const server = http.createServer((req, res) => {
+    res.writeHead(200);
+    fs.readFile(route(req.url), (err, data) => { res.end(data) });
+  });
+} else {
+  const server = https.createServer(
+    {
+      cert: fs.readFileSync(fs.readFileSync('https', 'utf8').split('\n')[0]),
+      key: fs.readFileSync(fs.readFileSync('https', 'utf8').split('\n')[1])
+    },
+    (req, res) => {
+      res.writeHead(200);
+      fs.readFile(route(req.url), (err, data) => { res.end(data) });
+    });
+}
+
 
 server.on('error', (err) => {
   console.log('Error: ' + err.message);
@@ -202,6 +214,7 @@ const ws = new WebSocket({
 });
 
 ws.on('request', (req) => {
+  if (req.resource === '/nosocket') return;
   const socket = req.accept('', req.origin);
   console.log(socket.remoteAddress + ' connected.');
   let player = createPlayer();
@@ -535,180 +548,6 @@ setInterval(() => {
   });
 
 }, 1000 / 50);
-
-
-
-
-//#region sio
-// FUCKIN SUCKET.IO SHIT
-/*
-io.sockets.on('connection', (socket) => {
-  console.log(socket.id + ' connected.')
-  let player = createPlayer(socket.id);
-  respawn(player);
-  let room = rooms[player.roomId];
-  const updateRoom = (method, data) => {
-    if (data)
-      room.players.forEach(p => {
-        io.sockets.connected[p.id].emit(method, data);
-      });
-    else
-      room.players.forEach(p => {
-        io.sockets.connected[p.id].emit(method);
-      });
-  };
- 
-  const roomid = player.roomId;
-  socket.emit('welcome', {
-    player,
-    room,
-    messages,
-    mapsize
-  });
-  setTimeout(() => {
-    player.vulnerable = true;
-  }, 3000);
-  setTimeout(() => {
-    io.sockets.emit('updateConnected', room.players);
-  }, 1000);
- 
-  socket.on('move', (data) => { // move vector
-    player.vector = data.vector;
-    socket.emit('updatePlayer', player);
-  });
- 
-  socket.on('updateMe', (data) => {
-    const i = room.players.findIndex(pl => pl.id === data.id);
-    if (i > -1) {
-      room.players[i] = data;
-      player = data;
- 
-      // io.sockets.emit('updateConnected', room.players);
-    }
-    // updateRoom('update')
-  });
- 
-  socket.on('collided', data => {
-    player.collides = data.collides;
-  });
- 
-  socket.on('shoot', () => {
-    if (player.speed <= 1)
-      player.bullets.push({
-        x: player.x,
-        y: player.y,
-        vector: player.vector
-      });
-  });
- 
-  socket.on('speedup', val => {
-    if (val)
-      player.speed = 4;
-    else
-      player.speed = 1;
-  });
- 
-  socket.on('pickupPowerup', data => {
- 
- 
- 
-  });
- 
-  socket.on('getMe', () => {
-    socket.emit('updatePlayer', player);
-  });
- 
-  socket.on('updateConnected', () => {
-    room.players.forEach(p => {
-      io.sockets.connected[p.id].emit('updateConnected', room.players);
-    });
-  });
- 
-  socket.on('disconnect', () => {
-    const i = room.players.findIndex(pl => pl.id === player.id);
-    if (i > -1) {
-      room.players.splice(i, 1);
-      room.players.forEach(p => {
-        io.sockets.connected[p.id].emit('updateConnected', room.players);
-      });
-      if (room.players.length < 1)
-        rooms.splice(player.roomId, 1);
- 
-    }
-    console.log(socket.id + ' disconnected.')
-  });
- 
-  //#region chat
-  socket.on('newMsg', data => {
-    const nick = data.player.nickname ? data.player.nickname : player.id;
-    const text = `${nick}: ${data.msg}\n`;
-    messages += text
-    io.sockets.emit('newMsg', text);
-  });
-  //#endregion
- 
-});
- 
- 
- 
-/* -----MAIN SERVER CLOCK----- */
-/*
-setInterval(() => { // sever clock
- 
-  rooms.forEach(room => {
-    room.players.forEach(player => {
-      // console.log(player.collides);
-      player.x += player.vector.x * player.speed;
-      player.y += player.vector.y * player.speed;
- 
-      if (player.x - player.mapsize < 0 || player.x + player.mapsize > mapsize)
-        player.vector.x = -player.vector.x;
-      if (player.y - player.mapsize < 0 || player.y + player.mapsize > mapsize)
-        player.vector.y = -player.vector.y;
- 
-      if (player.bullets.length > 0)
-        for (let i = 0; i < player.bullets.length; i++) {
-          const b = player.bullets[i];
-          b.x += b.vector.x * 10;
-          b.y += b.vector.y * 10;
- 
-          room.players.forEach(p => {
-            if (player.id !== p.id && p.vulnerable)
-              if (distanse(b.x, b.y, p.x, p.y) < p.mapsize) {
-                player.bullets.splice(i, 1);
-                io.sockets.connected[p.id].emit('hitted');
-                p.health--;
-                if (p.health <= 0) {
-                  io.sockets.connected[player.id].emit('frag');
-                  io.sockets.connected[p.id].emit('gameOver');
-                  respawn(p);
-                }
-                // p.deaths++;
-                // player.kills++;
-              }
- 
-          });
- 
-          if (b.x < 0 || b.x > mapsize || b.y < 0 || b.y > mapsize) {
-            player.bullets.splice(i, 1);
-          }
-        }
- 
- 
-      // io.sockets.connected[player.id].emit({ players: room.players });
-    });
-    room.players.forEach(p => {
-      io.sockets.connected[p.id].emit('update', {
-        players: room.players
-      });
-    });
-  });
- 
-  // io.sockets.emit('update', { players });
-}, 1000 / 50);
-*/
-
-//#endregion
 
 setInterval(() => {
   if (Math.random() < 0.3) {

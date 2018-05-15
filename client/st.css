@@ -11,8 +11,9 @@ body * {
   font-family: 'Roboto Mono', monospace;
 }
 
-image {
+img {
   image-rendering: crisp-edges;
+  transition-duration: 0.3s;
 }
 
 audio {
@@ -94,6 +95,7 @@ a {
   animation-duration: 1s;
   animation-name: overlay;
   animation-play-state: paused;
+  animation-fill-mode: forwards;
   text-align: center;
 }
 
@@ -105,6 +107,17 @@ a {
   right: 0px;
 }
 
+#down>* {
+  vertical-align: bottom;
+}
+
+#down button {
+  width: 50px;
+  height: 50px;
+  min-width: 50px;
+  background-size: contain;
+}
+
 #upgrade {
   display: inline;
   background-color: rgba(100, 0, 100, 0.4);
@@ -113,14 +126,34 @@ a {
   /* top: 52px; */
 }
 
+#upgrader {
+  position: relative;
+  display: inline-block;
+  /* background-color: yellow; */
+}
+
 #upgradeBtn {
-  /* position: absolute; */
   margin: 0px;
 }
 
+#upgradeBtn>img {
+  width: 25px;
+  height: 25px;
+}
+
+#upgradeBtn>div {
+  float: left;
+  margin: 10px;
+}
+
 #upgradeMenu {
+  width: fit-content;
+  width: 100%;
+  margin: 10px 0px 10px 0px;
   background-color: aqua;
-  margin: 0px
+  height: 0px;
+  transition-duration: 0.3s;
+  border-radius: 3px;
 }
 
 #about {
@@ -259,6 +292,12 @@ a {
   animation-duration: 2s;
   animation-iteration-count: infinite;
   animation-timing-function: ease;
+}
+
+#mobShoot::before, mobSpeedup::before {
+  width: 70px;
+  height: 70px;
+  margin: 0px;
 }
 
 .header {

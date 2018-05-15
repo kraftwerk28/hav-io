@@ -11,7 +11,7 @@
   <meta property="og:title" content="Play havio!">
   <meta property="og:description" content="Kill players and become cool; gl)">
   <meta property="og:image" content="http://kraftwerk28.pp.ua/img/thumbnail.png">
-  
+
   <meta name="description" content="Addictive 2D shooter called 'Havio'">
   <meta name="keywords" content="havio, hav-io, хавио">
   <meta name="robots" content="index, follow">
@@ -80,18 +80,25 @@
 
 
   <div id="down">
-    <button id="mobShoot" class="circle circleButton" style="width: 50px; height: 50px; min-width: 50px; background-size: contain; background-image: url('./img/Shoot.png'); display: none;">
+    <div style="display: inline-block;">
+      <button id="mobShoot" class="circle circleButton" style="background-image: url('./img/Shoot.png'); display: none;">
+      </button>
+      <br>
+      <button id="mobSpeedup" class="circle circleButton" style="background-image: url('./img/Speedup.png'); display: none;">
+      </button>
+    </div>
+    <!-- <br> -->
+    <button id="mute" class="circle circleButton" onclick="mute()">
     </button>
-    <br>
-    <button id="mobSpeedup" class="circle circleButton" style="width: 50px; height: 50px; min-width: 50px; background-size: contain; background-image: url('./img/Speedup.png'); display: none;">
-    </button>
-    <br>
-    <button id="mute" class="circle circleButton" style="width: 50px; height: 50px; min-width: 50px; background-size: contain"
-      onclick="mute()">
-    </button>
-    <!-- <button id="upgradeBtn" class="circle circleButton" style="height: 50px; min-width: 50px;">Upgrade
-    </button> -->
-    <!-- <div id="upgradeMenu" class="circle"></div> -->
+    <!-- <div id="upgrader">
+      <button id="upgradeBtn" class="circle circleButton">
+        <img src="img/upArr.png">
+      </button>
+      <div id="upgradeMenu">
+        <img src="img/upArr.png">
+        <img src="img/upArr.png">
+      </div>
+    </div> -->
     <!-- <button id="fullScreen" class="circle circleButton" style="width: 50px; height: 50px; min-width: 50px; background-size: contain"
       onclick="goFullScreen();">
       <canvas class="buttonCanv"></canvas>

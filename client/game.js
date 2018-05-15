@@ -1,39 +1,45 @@
 'use strict';
 
-const testing = !1;
-const testURL = 'ws://192.168.1.104:8080/';
-const nativeURL = 'ws://kraftwerk28.pp.ua/';
-let socket = null;
+const testing = !1,
+  testURL = 'ws://192.168.0.101:8080' + location.pathname,
+  nativeURL = 'wss://kraftwerk28.pp.ua';
+let
+  socket = null,
 
-let syncEmit = (callback) => { awaitFunc = callback };
-let player = {
-  x: 0,
-  y: 0,
-  vector: [0, 0],
-  speed: 0,
-  size: 10,
-  id: 0,
-  bullets: [],
-  vulnerable: false,
-  health: 3,
-  collides: false,
-  nickname: ''
-};
+  syncEmit = (callback) => { awaitFunc = callback },
+  player = {
+    x: 0,
+    y: 0,
+    vector: [0, 0],
+    speed: 0,
+    size: 10,
+    id: 0,
+    bullets: [],
+    vulnerable: false,
+    health: 3,
+    collides: false,
+    nickname: ''
+  },
 
-let playersData = {};
+  playersData = {},
+  touches = {
+    is: false,
+    sx: null, sy: null, x: null, y: null,
+    reset() { this.sx = this.x; this.sy = this.y }
+  },
 
+  awaitFunc = null,
+  bulletClock,
+  canvOffset = {},
+  rClick = false,
+  lClick = false,
 
-let awaitFunc = null;
-let bulletClock;
-let canvOffset = {};
-let rClick = false;
-let lClick = false;
-let pingStart = 0;
-let size = 1500;
-let canvasCenter = {};
-let loaded = false;
-let smoothness = 0.2;
-let isMobile = false;
+  pingStart = 0,
+  size = 1500,
+  canvasCenter = {},
+  loaded = false,
+  smoothness = 0.2,
+  isMobile = false;
 
 const viewport = {
   x: 0,
@@ -54,12 +60,12 @@ const viewport = {
   }
 };
 
-let kills = 0;
-let deaths = 0;
+let kills = 0,
+  deaths = 0,
 
-let muted = false;
-let walls = [];
-let powerups = [];
+  muted = false,
+  walls = [],
+  powerups = [];
 
 const sendHTTP = (data) => {
   const xhr = new XMLHttpRequest();
@@ -94,7 +100,7 @@ window.onunload = () => {
   localStorage.setItem('haviokills', kills);
 };
 
-window.oncontextmenu = () => testing;
+window.oncontextmenu = () => false;
 
 window.onwheel = (e) => {
   e.preventDefault();
@@ -162,43 +168,72 @@ const sfx = {
 }
 sfx.soundtrack.loop = true;
 sfx.soundtrack.volume = 0.5;
-sfx.soundtrack.oncanplaythrough = () => { loaded = true }
+sfx.soundtrack.oncanplaythrough = () => { loaded = true; }
 
-const heartContainer = document.getElementById('heartContainer');
-
-const muteButton = document.getElementById('mute');
-const connected = document.getElementById('connected');
-const _roomId = document.getElementById('roomId');
-const nicknameinput = document.getElementById('nick');
+const
+  heartContainer = document.getElementById('heartContainer'),
+  muteButton = document.getElementById('mute'),
+  connected = document.getElementById('connected'),
+  _roomId = document.getElementById('roomId'),
+  nicknameinput = document.getElementById('nick');
 nicknameinput.oninput = (e) => {
   localStorage.setItem('havionick', nicknameinput.value);
   player.nickname = nicknameinput.value;
 };
 
-/*
-let upMenuFlag = false;
-const upgrader = document.getElementById('upgradeMenu');
-const upgradeBnt = document.getElementById('upgradeBtn');
-upgradeBnt.style.top = '0px';
-upgrader.style.top = upgradeBnt.style.top;
-upgrader.style.left = upgradeBnt.style.left;
-upgradeBnt.onclick = () => {
-  upMenuFlag = !upMenuFlag;
-  if (upMenuFlag) {
-    upgradeBtn.style.top = '-50px';
-    upgradeBtn.style.backgroundColor = 'green';
-  } else {
-    upgradeBtn.style.top = '0px';
-    upgradeBtn.style.backgroundColor = 'orange';
+nicknameinput.onkeydown = (e) => {
+  if (e.keyCode === 13) {
+    auth();
   }
 };
-*/
 
+/*
+let upMenuFlag = false;
+const
+  upgradeBtn = document.getElementById('upgradeBtn'),
+  arrow = upgradeBtn.children[0],
+  upgradeMenu = document.getElementById('upgradeMenu');
+
+// upgradeBtn.appendChild(arrow);
+// upgradeBtn.appendChild(upgradeMenu);
+upgradeBtn.onclick = () => {
+  upMenuFlag = !upMenuFlag;
+  if (upMenuFlag) {
+    Array.prototype.forEach.call(
+      upgradeMenu.children,
+      c => {
+        c.style.visibility = 'visible';
+        // setTimeout(() => {
+        c.style.display = 'initial';
+        // }, 300);
+      }
+    );
+    upgradeMenu.style.height = '200px';
+    upgradeMenu.style.opacity = '1';
+    arrow.style.transform = 'rotateX(180deg)';
+  } else {
+    Array.prototype.forEach.call(
+      upgradeMenu.children,
+      c => {
+        c.style.visibility = 'hidden';
+        setTimeout(() => {
+          c.style.display = 'none';
+        }, 300);
+      }
+    );
+    upgradeMenu.style.height = '0px';
+    upgradeMenu.style.opacity = '0';
+
+    upgradeBtn.style.backgroundColor = 'orange';
+    arrow.style.transform = 'rotateX(0deg)';
+  }
+};
 // minimap
 const minimap = document.getElementById('minimap');
 const minictx = minimap.getContext('2d');
 minictx.fillStyle = 'lime';
 minictx.strokeStyle = 'lime';
+*/
 
 // main canvas
 const canvas = document.getElementById('game');
@@ -245,6 +280,7 @@ canvas.onmousedown = (e) => {
       }, 500);
     }
   } else if (e.button === 2) {
+    e.preventDefault();
     rClick = true;
     if (!lClick)
       speedup(true);
@@ -327,27 +363,26 @@ const mobilize = () => {
   // mobSpeedup.style.backgroundImage
   canvas.ontouchstart = (e) => {
     if (e.touches.length < 2) {
-
-      startX = e.changedTouches[0].clientX;
-      startY = e.changedTouches[0].clientY;
+      touches.sx = e.changedTouches[0].clientX;
+      touches.sy = e.changedTouches[0].clientY;
     }
     else
       shoot();
   };
   canvas.ontouchmove = (e) => {
-    const x = e.changedTouches[0].clientX - canvOffset.x;
-    const y = e.changedTouches[0].clientY - canvOffset.y;
-    const vec = [x - startX/* - player.x + viewport.x*/, y - startY/* - player.y + viewport.y*/];
+    touches.is = true;
+    touches.x = e.changedTouches[0].clientX;
+    touches.y = e.changedTouches[0].clientY;
+    const x = touches.x - canvOffset.x;
+    const y = touches.y - canvOffset.y;
+    const vec = [touches.x - touches.sx/* - player.x + viewport.x*/, touches.y - touches.sy/* - player.y + viewport.y*/];
     const l = Math.sqrt(Math.pow(vec[0], 2) + Math.pow(vec[1], 2));
     socket.send(JSON.stringify({ vec: [...vec.map(v => v / l)] }));
-
-    ctx.strokeStyle = 'lime';
-
-    ctx.lineWidth = 5;
-    ctx.moveTo(startX, startY);
-    ctx.lineTo(x, y);
-    ctx.stroke();
   };
+  canvas.ontouchend = (e) => {
+    touches.is = false;
+    touches.reset();
+  }
   // document.body.style.transform = 'rotate(90deg)';
   // document.body.style.position = 'absolute';
   // document.body.style.right = '0px';
@@ -598,6 +633,17 @@ const render = (data) => {
   ctx.lineTo(-viewport.x, size - viewport.y);
   ctx.lineTo(-viewport.x, -viewport.y);
   ctx.stroke();
+
+  if (touches.is) {
+    ctx.strokeStyle = 'rgba(50, 255, 0, 0.4)';
+
+    ctx.beginPath();
+    ctx.lineWidth = 30;
+    ctx.lineCap = 'round';
+    ctx.moveTo(touches.sx, touches.sy);
+    ctx.lineTo(touches.x, touches.y);
+    ctx.stroke();
+  }
 };
 
 const processData = (data) => {
