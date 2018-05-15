@@ -57,8 +57,8 @@ if (testing) {
 } else {
   const server = https.createServer(
     {
-      cert: fs.readFileSync(fs.readFileSync('https', 'utf8').split('\n')[0]),
-      key: fs.readFileSync(fs.readFileSync('https', 'utf8').split('\n')[1])
+      cert: fs.readFileSync(fs.readFileSync('https', 'utf8').split('\n')[0], 'utf8'),
+      key: fs.readFileSync(fs.readFileSync('https', 'utf8').split('\n')[1], 'utf8')
     },
     (req, res) => {
       res.writeHead(200);
