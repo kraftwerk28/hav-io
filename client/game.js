@@ -228,12 +228,14 @@ upgradeBtn.onclick = () => {
     arrow.style.transform = 'rotateX(0deg)';
   }
 };
+*/
+
 // minimap
 const minimap = document.getElementById('minimap');
 const minictx = minimap.getContext('2d');
 minictx.fillStyle = 'lime';
 minictx.strokeStyle = 'lime';
-*/
+
 
 // main canvas
 const canvas = document.getElementById('game');
