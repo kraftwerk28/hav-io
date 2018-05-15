@@ -8,7 +8,7 @@ const testing = !1,
   WebSocket = require('websocket').server,
   classes = require('./classes'),
   files = {},
-  port = testing ? 8080 : 443;
+  port = testing ? 8080 : 80;
 
 let startUsage = process.cpuUsage();
 
@@ -49,21 +49,11 @@ const route = (url) => {
   return './client' + url;
 };
 
-if (testing) {
+if (true) { // lol
   const server = http.createServer((req, res) => {
     res.writeHead(200);
     fs.readFile(route(req.url), (err, data) => { res.end(data) });
   });
-} else {
-  const server = https.createServer(
-    {
-      cert: fs.readFileSync(fs.readFileSync('https', 'utf8').split('\n')[0], 'utf8'),
-      key: fs.readFileSync(fs.readFileSync('https', 'utf8').split('\n')[1], 'utf8')
-    },
-    (req, res) => {
-      res.writeHead(200);
-      fs.readFile(route(req.url), (err, data) => { res.end(data) });
-    });
 }
 
 
