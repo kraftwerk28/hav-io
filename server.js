@@ -49,13 +49,10 @@ const route = (url) => {
   return './client' + url;
 };
 
-if (true) { // lol
-  const server = http.createServer((req, res) => {
-    res.writeHead(200);
-    fs.readFile(route(req.url), (err, data) => { res.end(data) });
-  });
-}
-
+const server = http.createServer((req, res) => {
+  res.writeHead(200);
+  fs.readFile(route(req.url), (err, data) => { res.end(data) });
+});
 
 server.on('error', (err) => {
   console.log('Error: ' + err.message);
