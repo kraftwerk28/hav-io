@@ -2,7 +2,7 @@
 
 const testing = !1,
   testURL = 'ws://192.168.0.101:8080' + location.pathname,
-  nativeURL = 'wss://kraftwerk28.pp.ua';
+  nativeURL = 'ws://kraftwerk28.pp.ua';
 let
   socket = null,
 
