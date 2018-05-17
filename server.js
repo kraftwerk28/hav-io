@@ -7,6 +7,7 @@ const testing = !1,
   qs = require('querystring'),
   WebSocket = require('websocket').server,
   classes = require('./classes'),
+  _vector = require('./vector'),
   files = {},
   port = testing ? 8080 : 80;
 
@@ -81,7 +82,6 @@ const spawnerCount = 6;
 let plCount = -1;
 const rotDelta = 0.1;
 
-
 const randomRange = (start, end) => {
   return Math.floor(Math.random() * end + start)
 };
@@ -90,33 +90,29 @@ const distance = (x1, y1, x2, y2) => {
   return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2))
 };
 
-const toDeg = rad => rad * 57.3;
-
-const normalize = (vector) => {
-  const l = Math.sqrt(Math.pow(vector[0], 2) + Math.pow(vector[1], 2));
-  return [vector[0] / l, vector[1] / l];
+const interpol = (cur, min, max) => {
+  if (cur <= max && cur >= min) {
+    return (cur - min) / (max - min);
+  }
 };
 
-const rotate = (vec, rad) => {
-  const v = [vec[0], vec[1]];
-  v[0] = vec[0] * Math.cos(rad) - vec[1] * Math.sin(rad);
-  v[1] = vec[0] * Math.sin(rad) + vec[1] * Math.cos(rad);
-  return v;
-};
-
-const vecLerp = (v1, v2) => {
-  const dif = [v2[0] - v1[0], v2[1] - v1[1]];
-  let a = 0.5;
-  if ((v1[0] + dif[0] === v2[0] && v1[1] + dif[1] === v2[1]) || v2[0] * v1[0] + v2[1] * v1[1] < 0)
-    a = -0.5;
-  const v = [0, 0];
-  v[0] = v2[0] * Math.cos(a) - v2[1] * Math.sin(a);
-  v[1] = v2[0] * Math.sin(a) + v2[1] * Math.cos(a);
-  return v;
-};
-
-const dot = (v1, v2) => {
-  return v1[0] * v2[0] + v1[1] * v2[1];
+const statToPoint = (player, val) => {
+  switch (val) {
+    case 0:
+      return Math.round((player.maxHealth - 3) * 1.6);
+    case 1:
+      return Math.round((player.speed - 1) / 1.5 * 5);
+    case 2:
+      return Math.ceil((500 - player.shootInterval) / 240 * 5);
+    case 3:
+      return (player.bulletSpeed - 10) * 0.5;
+    case 4:
+      return player.gunCount - 1;
+    case 5:
+      return (player.shieldTime - 5000) / 1000;
+    default:
+      break;
+  }
 };
 
 const createPlayer = (isBot) => {
@@ -214,7 +210,19 @@ ws.on('request', (req) => {
   let room = rooms[player.roomId];
 
   setTimeout(() => {
-    socket.send(JSON.stringify({ walls: room.walls, powerups: room.powerups }));
+    socket.send(JSON.stringify({
+      points: player.points,
+      walls: room.walls,
+      powerups: room.powerups,
+      upgStats: [
+        [player.health, Math.round((player.health - 3) * 1.6)], // health
+        [player.speed, Math.round((player.speed - 1) / 1.5 * 5)], // speed
+        [player.shootInterval, Math.ceil((500 - player.shootInterval) / 240 * 5)], // reload time
+        [player.bulletSpeed, (player.bulletSpeed - 10) * 0.5], // bullet speed
+        [player.gunCount, player.gunCount - 1], // gun count
+        [player.shieldTime, (player.shieldTime - 5000) / 1000] // shield time
+      ]
+    }));
   }, 200);
 
   const processIncome = (data) => {
@@ -224,12 +232,15 @@ ws.on('request', (req) => {
     }
 
     // perform shooting
-    if (data.shoot)
-      if (player.speed <= 1)
-        player.shoot()
+    if (data.shoot !== undefined)
+      if (!player.accelerated) {
+        player.isShooting = Boolean(data.shoot);
+        if (data.shoot) player.shoot();
+      };
     // perform speedup
     if (data.speedup !== undefined)
-      player.speed = data.speedup ? 4 : 1;
+      // console.log(data.speedup)
+      player.accelerated = data.speedup;
 
     if (data.nickname !== undefined) {
       player.nickname = data.nickname ? data.nickname : 'Player';
@@ -241,11 +252,65 @@ ws.on('request', (req) => {
         }));
       });
     }
-    // send full player info if needed
-    // if (data[4]) socket.sendUTF(JSON.stringify(player));
-    // perform messenger
-    // if (data[5]) { }
-
+    if (data.upgrade !== undefined) {
+      /*
+      0:  health
+      1:  speed
+      2:  reload time
+      3:  bullet speed
+      4:  gun count
+      5:  shield time
+      */
+      const price = Math.pow(2, statToPoint(player, data.upgrade) + 1);
+      if (player.points >= price) {
+        player.points -= price;
+        switch (data.upgrade) {
+          case 0:
+            if (player.maxHealth < 6) {
+              player.maxHealth += 1;
+              player.health += 1;
+            }
+            socket.send(JSON.stringify({ health: player.health }));
+            break;
+          case 1:
+            if (player.speed < 2.5) {
+              player.speed += 0.3;
+            }
+            break;
+          case 2:
+            if (player.shootInterval > 200)
+              player.shootInterval -= 60;
+            break;
+          case 3:
+            if (player.bulletSpeed < 20) {
+              player.bulletSpeed += 2;
+            }
+            break;
+          case 4:
+            if (player.gunCount < 6) {
+              player.gunCount += 1;
+            }
+            break;
+          case 5:
+            if (player.shieldTime < 10000)
+              player.shieldTime += 1000;
+          default:
+            break;
+        }
+        // array of arrays that are raw values and percentage values
+        socket.send(JSON.stringify({
+          points: player.points,
+          upgStats: [
+            [player.health, statToPoint(player, 0)], // health
+            [player.speed, statToPoint(player, 1)], // speed
+            [player.shootInterval, statToPoint(player, 2)], // reload time
+            [player.bulletSpeed, statToPoint(player, 3)], // bullet speed
+            [player.gunCount, statToPoint(player, 4)], // gun count
+            [player.shieldTime, statToPoint(player, 5)] // shield time
+          ]
+        }));
+      }
+    }
     if (data.command && testing) {
       try {
         socket.send(JSON.stringify({
@@ -293,11 +358,11 @@ ws.on('request', (req) => {
 
 const updatePlayer = (player) => {
 
-  player.x += player.vector[0] * player.speed;
-  player.y += player.vector[1] * player.speed;
+  player.x += player.vector[0] * player.getSpeed();
+  player.y += player.vector[1] * player.getSpeed();
   player.bullets.forEach((b) => {
-    b.x += b.vector[0] * 10;
-    b.y += b.vector[1] * 10;
+    b.x += b.vector[0] * player.bulletSpeed;
+    b.y += b.vector[1] * player.bulletSpeed;
   });
   // collision detection
   if (player.x - player.size < 0) player.x = player.size;
@@ -343,7 +408,7 @@ const updatePlayer = (player) => {
 
         switch (pu.type) {
           case 'heart':
-            if (player.health < 3) {
+            if (player.health < player.maxHealth) {
               player.health++;
             }
             break;
@@ -351,7 +416,7 @@ const updatePlayer = (player) => {
             player.vulnerable = false;
             setTimeout(() => {
               player.vulnerable = true;
-            }, 5000);
+            }, player.shieldTime);
         }
         if (!player.isBot)
           sockets.get(player.id).send(JSON.stringify({
@@ -401,13 +466,23 @@ const updatePlayer = (player) => {
             sockets.get(pl.id).send(JSON.stringify({ health: pl.health, damage: 1 }));
 
           if (pl.health < 1) {
+            player.points += randomRange(1, 6);
             respawn(pl);
             if (!pl.isBot)
-              sockets.get(pl.id).send(JSON.stringify({ health: pl.health, damage: 1 }));
+              sockets.get(pl.id).send(JSON.stringify({
+                health: pl.health, damage: 1,
+                upgStats: [
+                  [player.health, statToPoint(player, 0)], // health
+                  [player.speed, statToPoint(player, 1)], // speed
+                  [player.shootInterval, statToPoint(player, 2)], // reload time
+                  [player.bulletSpeed, statToPoint(player, 3)], // bullet speed
+                  [player.gunCount, statToPoint(player, 4)], // gun count
+                  [player.shieldTime, statToPoint(player, 5)] // shield time
+                ]
+              }));
             if (!player.isBot)
-              sockets.get(player.id).send(JSON.stringify({ frag: 1 }));
+              sockets.get(player.id).send(JSON.stringify({ frag: 1, points: player.points }));
           }
-
 
           player.bullets.splice(i, 1);
           // i--;
@@ -423,7 +498,10 @@ const updateBot = (bot) => {
   const radius = 50;
   const sideDelta = 25;
 
-  const pls = rooms[bot.roomId].players.filter(p => p.id !== bot.id).concat(rooms[bot.roomId].powerups);
+  const pls = rooms[bot.roomId]
+    .players
+    .filter(p => p.id !== bot.id)
+    .concat(rooms[bot.roomId].powerups);
   let dis = Infinity;
   let minI = 0;
   if (pls.length > 0) {
@@ -470,9 +548,9 @@ const updateBot = (bot) => {
 
   if (isCol) {
     bot.speed = 1;
-    bot.vector = rotate(bot.vector, isCol);
+    bot.vector = _vector.rotate(bot.vector, isCol);
   } else {
-    bot.vector = rotate(
+    bot.vector = _vector.rotate(
       bot.vector,
       bot.vector[0] * (bot.target[1] - bot.y) -
         bot.vector[1] * (bot.target[0] - bot.x) > 0 ?
@@ -548,8 +626,9 @@ const respawn = (player) => {
   player.vector = [1, 0];
   // player.deaths++;
 
+  player.reset();
   player.vulnerable = false;
-  player.health = 3;
+  player.health = player.maxHealth;
   setTimeout(() => {
     // console.log('unshield' + player.id);
     player.vulnerable = true;
@@ -560,7 +639,7 @@ const respawn = (player) => {
 
 const respawnBot = (bot) => {
   respawn(bot);
-  bot.health = 3;
+  bot.health = bot.maxHealth;
 }
 
 const generateWalls = (ind) => {

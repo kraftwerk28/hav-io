@@ -5,6 +5,11 @@ body {
   background-color: rgba(0, 0, 0, 0.4);
   height: 0;
   overflow: hidden;
+  user-select: none;
+}
+
+button {
+  cursor: pointer;
 }
 
 body * {
@@ -129,16 +134,42 @@ a {
 #upgrader {
   position: relative;
   display: inline-block;
+  width: 50px;
+  margin: 10px 0px 10px 0px;
   /* background-color: yellow; */
 }
 
+@keyframes upgra {
+  5% {
+    transform: translateY(-20px) scale(1.2);
+    background-color: lime;
+  }
+  10% {
+    transform: translateY(0px);
+  }
+  15% {
+    transform: translateY(-20px) scale(1.2);
+    background-color: lime;
+  }
+  20% {
+    transform: translateY(0px);
+  }
+}
+
 #upgradeBtn {
-  margin: 0px;
+  position: absolute;
+  margin: 10px 0px 0px 0px;
+  bottom: 0px;
+  animation-iteration-count: infinite;
+  animation-duration: 3s;
 }
 
 #upgradeBtn>img {
-  width: 25px;
-  height: 25px;
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  width: 50px;
+  height: 50px;
 }
 
 #upgradeBtn>div {
@@ -149,17 +180,41 @@ a {
 #upgradeMenu {
   width: fit-content;
   width: 100%;
-  margin: 10px 0px 10px 0px;
-  background-color: aqua;
+  /* margin: 10px 0px 10px 0px; */
   height: 0px;
   transition-duration: 0.3s;
   border-radius: 3px;
 }
 
+#upgradeMenu>div {
+  color: black;
+  text-align: left;
+  margin: 5px;
+  height: 30px;
+  width: 200px;
+  background-color: mediumvioletred;
+  cursor: pointer;
+}
+
+#upgradeMenu>div:active {
+  transform: scale(0.9);
+}
+
+#upgradeMenu>div>span:last-child {
+  float: right;
+  /* text-align: right; */
+}
+
+#points {
+  display: inline-block;
+  font-size: large;
+  margin: 10px;
+}
+
 #about {
   text-align: center;
   resize: none;
-  height: 150px;
+  height: 180px;
   white-space: pre-line;
   color: slateblue;
 }

@@ -18,7 +18,7 @@ let
     vulnerable: false,
     health: 3,
     collides: false,
-    nickname: ''
+    nickname: '',
   },
 
   playersData = {},
@@ -39,7 +39,13 @@ let
   canvasCenter = {},
   loaded = false,
   smoothness = 0.2,
-  isMobile = false;
+  isMobile = false,
+
+  points = 0,
+  minPrice = 2,
+
+  shClock,
+  shootInterval = 0;
 
 const viewport = {
   x: 0,
@@ -187,28 +193,38 @@ nicknameinput.onkeydown = (e) => {
   }
 };
 
-/*
+
 let upMenuFlag = false;
 const
   upgradeBtn = document.getElementById('upgradeBtn'),
   arrow = upgradeBtn.children[0],
   upgradeMenu = document.getElementById('upgradeMenu');
 
+// upgradeBtn.style.animationPlayState = 'paused';
+Array.prototype.forEach.call(
+  upgradeMenu.children,
+  c => {
+    // c.style.visibility = 'hidden';
+    setTimeout(() => {
+      c.style.display = 'none';
+    }, 300);
+  }
+);
 // upgradeBtn.appendChild(arrow);
 // upgradeBtn.appendChild(upgradeMenu);
 upgradeBtn.onclick = () => {
+  // upgradeBtn.style.animationPlayState = 'paused';
+  upgradeBtn.style.animationName = '';
   upMenuFlag = !upMenuFlag;
   if (upMenuFlag) {
     Array.prototype.forEach.call(
       upgradeMenu.children,
       c => {
         c.style.visibility = 'visible';
-        // setTimeout(() => {
-        c.style.display = 'initial';
-        // }, 300);
+        c.style.display = 'block';
       }
     );
-    upgradeMenu.style.height = '200px';
+    upgradeMenu.style.height = '260px';
     upgradeMenu.style.opacity = '1';
     arrow.style.transform = 'rotateX(180deg)';
   } else {
@@ -216,9 +232,7 @@ upgradeBtn.onclick = () => {
       upgradeMenu.children,
       c => {
         c.style.visibility = 'hidden';
-        setTimeout(() => {
-          c.style.display = 'none';
-        }, 300);
+        // c.style.display = 'none';
       }
     );
     upgradeMenu.style.height = '0px';
@@ -228,7 +242,7 @@ upgradeBtn.onclick = () => {
     arrow.style.transform = 'rotateX(0deg)';
   }
 };
-*/
+
 
 // minimap
 const minimap = document.getElementById('minimap');
@@ -276,10 +290,7 @@ canvas.onmousedown = (e) => {
   if (e.button === 0) {
     lClick = true;
     if (!rClick) {
-      shoot();
-      bulletClock = setInterval(() => {
-        shoot();
-      }, 500);
+      shoot(true);
     }
   } else if (e.button === 2) {
     e.preventDefault();
@@ -292,6 +303,7 @@ canvas.onmouseup = (e) => {
   e.preventDefault();
   if (e.button === 0) {
     lClick = false;
+    shoot(false);
     clearInterval(bulletClock);
   } else if (e.button === 2) {
     rClick = false;
@@ -360,7 +372,10 @@ const mobilize = () => {
     speedup(false);
   };
   mobShoot.ontouchstart = () => {
-    shoot();
+    shoot(true);
+  };
+  mobShoot.ontouchend = () => {
+    shoot(false);
   };
   // mobSpeedup.style.backgroundImage
   canvas.ontouchstart = (e) => {
@@ -430,6 +445,44 @@ if (typeof window.orientation !== 'undefined') {
 // const grad1 = ctx.createRadialGradient(x, y, 0, x, y, s * 4);
 //#endregion
 
+const getPlColor = (val) => {
+  switch (val) {
+    case 1:
+      return 'red';
+    case 2:
+      return 'yellow';
+    case 3:
+      return 'lime';
+    case 4:
+      return 'cyan';
+    case 5:
+      return 'blue';
+    case 6:
+      return 'magenta';
+    default:
+      break;
+  }
+};
+
+const rainbow = (val) => {
+  switch (val) {
+    case 0:
+      return 'tomato';
+    case 1:
+      return 'gold';
+    case 2:
+      return 'lime';
+    case 3:
+      return 'lightskyblue';
+    case 4:
+      return 'royalblue';
+    case 5:
+      return 'magenta';
+    default:
+      break;
+  }
+}
+
 const render = (data) => {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   minictx.clearRect(0, 0, minimap.width, minimap.height);
@@ -466,20 +519,8 @@ const render = (data) => {
       ctx.lineTo(x, y);
       ctx.fill();
 
-      if (p[4] < 2)
-        switch (p[3]) {
-          case 3:
-            ctx.fillStyle = 'lime';
-            break;
-          case 2:
-            ctx.fillStyle = 'yellow';
-            break;
-          case 1:
-            ctx.fillStyle = 'red';
-            break;
-        }
-      else
-        ctx.fillStyle = 'white';
+      ctx.fillStyle = getPlColor(p[3]);
+
       ctx.beginPath();
       ctx.arc(x, y, s, 0, Math.PI * 2);
       ctx.fill();
@@ -508,21 +549,7 @@ const render = (data) => {
 
     if (true) {
       const s = player.size;
-      let pColor = '';
-      if (data.p[data.id][4] < 2)
-        switch (data.p[data.id][3]) {
-          case 3:
-            ctx.fillStyle = 'lime';
-            break;
-          case 2:
-            ctx.fillStyle = 'yellow';
-            break;
-          case 1:
-            ctx.fillStyle = 'red';
-            break;
-        }
-      else
-        ctx.fillStyle = 'white';
+      ctx.fillStyle = getPlColor(data.p[data.id][3]);
       let x = data.p[data.id][0];
       let y = data.p[data.id][1];
       viewport.center(x, y);
@@ -689,7 +716,26 @@ const processData = (data) => {
         sfx.shieldPick.play();
         screenEffects.shield();
     }
+  }
+  if (data.points !== undefined) {
+    document.getElementById('points').children[1].textContent = data.points;
+    points = data.points;
+    if (points >= minPrice &&
+      upgradeBtn.style.animationName === '' && !upMenuFlag)
+      upgradeBtn.style.animationName = 'upgra';
+  }
+  if (data.upgStats !== undefined) {
+    shootInterval = data.upgStats[2][0];
+    console.log(shootInterval);
+    minPrice = Math.min(...data.upgStats.map(a => Math.pow(2, a[1] + 1)));
+    Array.prototype.forEach.call(upgradeMenu.children, (ch, i) => {
+      ch.children[1].textContent = data.upgStats[i][0];
+      ch.children[2].textContent =
+        Math.pow(2, data.upgStats[i][1] + 1) >= 64 ? 'MAX' :
+          Math.pow(2, data.upgStats[i][1] + 1);
 
+      ch.style.backgroundColor = rainbow(data.upgStats[i][1]);
+    });
   }
 
   if (data.nicks !== undefined) {
@@ -719,6 +765,11 @@ const socketize = () => {
   socket.onopen = (ev) => {
     socket.send(JSON.stringify({ nickname: player.nickname }));
     document.body.removeChild(overlay);
+
+    if (testing) {
+      command('kickBot(0)');
+      command('kickBot(0)');
+    }
   };
 
   socket.onclose = (event) => {
@@ -734,9 +785,23 @@ const socketize = () => {
   };
 };
 
-const shoot = () => {
-  sfx.shoot.play();
-  socket.send('{"shoot":1}');
+const upgrade = (index) => {
+  socket.send(`{"upgrade":${index}}`);
+};
+
+const shoot = (bool) => {
+  if (lClick)
+    sfx.shoot.play();
+  const f = () => {
+    setTimeout(() => {
+      if (lClick) {
+        sfx.shoot.play();
+        f();
+      }
+    }, shootInterval);
+  };
+  f();
+  socket.send(`{"shoot":${bool ? 1 : 0}}`);
 };
 
 const speedup = (val) => {
@@ -861,5 +926,7 @@ const command = (c) => {
   socket.send(JSON.stringify({ command: c }));
 };
 
-if (testing) mute();
+if (testing) {
+  mute();
+}
 nicknameinput.focus();

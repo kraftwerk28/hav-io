@@ -39,7 +39,8 @@
         <td>
           <div id="about" class="circle textArea" readonly>left click: shoot
             <br> right click: accelerate
-            <br> kill players to be coolest; gl)
+            <br> earn points and upgrade your unit
+            <br> kill players to be coolest; gl hf)
           </div>
         </td>
       </tr>
@@ -64,6 +65,9 @@
         <img class="heart" src="./img/heart.png" width="50" height="50">
         <img class="heart" src="./img/heart.png" width="50" height="50">
         <img class="heart" src="./img/heart.png" width="50" height="50">
+        <img class="heart" src="./img/heart.png" width="50" height="50" style="display: none;">
+        <img class="heart" src="./img/heart.png" width="50" height="50" style="display: none;">
+        <img class="heart" src="./img/heart.png" width="50" height="50" style="display: none;">
       </div>
     </div>
 
@@ -87,18 +91,49 @@
       <button id="mobSpeedup" class="circle circleButton" style="background-image: url('./img/Speedup.png'); display: none;">
       </button>
     </div>
-    <!-- <br> -->
     <button id="mute" class="circle circleButton" onclick="mute()">
     </button>
-    <!-- <div id="upgrader">
+    <div id="upgrader">
+      <div id="upgradeMenu">
+        <div class="circle" onclick="upgrade(0)">
+          <span>Health:</span>
+          <span></span>
+          <span></span>
+        </div>
+        <div class="circle" onclick="upgrade(1)">
+          <span>Speed:</span>
+          <span></span>
+          <span></span>
+        </div>
+        <div class="circle" onclick="upgrade(2)">
+          <span>Reload time</span>
+          <span></span>
+          <span></span>
+        </div>
+        <div class="circle" onclick="upgrade(3)">
+          <span>Bullet speed:</span>
+          <span></span>
+          <span></span>
+        </div>
+        <div class="circle" onclick="upgrade(4)">
+          <span>Gun count:</span>
+          <span></span>
+          <span></span>
+        </div>
+        <div class="circle" onclick="upgrade(5)">
+          <span>Shield time:</span>
+          <span></span>
+          <span></span>
+        </div>
+      </div>
       <button id="upgradeBtn" class="circle circleButton">
         <img src="img/upArr.png">
       </button>
-      <div id="upgradeMenu">
-        <img src="img/upArr.png">
-        <img src="img/upArr.png">
-      </div>
-    </div> -->
+    </div>
+    <div id="points">
+      <span>Points:</span>
+      <span></span>
+    </div>
     <!-- <button id="fullScreen" class="circle circleButton" style="width: 50px; height: 50px; min-width: 50px; background-size: contain"
       onclick="goFullScreen();">
       <canvas class="buttonCanv"></canvas>
