@@ -99,11 +99,13 @@ const interpol = (cur, min, max) => {
 const statToPoint = (player, val) => {
   switch (val) {
     case 0:
-      return Math.round((player.maxHealth - 3) * 1.6);
+      return player.maxHealth <= 3 ? 0 :
+        player.maxHealth === 4 ? 2 :
+          player.maxHealth >= 6 ? 5 : 4;
     case 1:
       return Math.round((player.speed - 1) / 1.5 * 5);
     case 2:
-      return Math.ceil((500 - player.shootInterval) / 240 * 5);
+      return Math.floor((500 - player.shootInterval) / 240 * 5);
     case 3:
       return (player.bulletSpeed - 10) * 0.5;
     case 4:
@@ -134,14 +136,10 @@ const createPlayer = (isBot) => {
   plCount++;
   if (rooms.length < 1) {
     p = isBot ? new classes.Bot(plCount, 0) : new classes.Player(plCount, 0);
-    rooms.push(new classes.Room(
-      mapsize,
-      maxPl,
-      p,
-      new classes.Bot(++plCount, 0),
-      new classes.Bot(++plCount, 0)
-    ));
+    rooms.push(new classes.Room(mapsize, maxPl, p));
     generateWalls(0);
+    createBot(0);
+    createBot(0);
     return e();
   }
 
@@ -153,19 +151,36 @@ const createPlayer = (isBot) => {
     }
   }
   p = isBot ? new classes.Bot(plCount, rooms.length) : new classes.Player(plCount, rooms.length);
-  rooms.push(new classes.Room(mapsize,
-    maxPl,
-    p,
-    new classes.Bot(++plCount, rooms.length),
-    new classes.Bot(++plCount, rooms.length)
-  ));
+  rooms.push(new classes.Room(mapsize, maxPl, p));
   // console.log('new room created');
   generateWalls(rooms.length - 1);
+  createBot(p.roomId);
+  createBot(p.roomId);
   return e();
 };
 
-const createBot = () => {
-  createPlayer(true);
+const sendStats = (player) => {
+  sockets.get(player.id).send(JSON.stringify({
+    points: player.points,
+    upgStats: [
+      [player.health, statToPoint(player, 0)], // health
+      [player.speed, statToPoint(player, 1)], // speed
+      [player.shootInterval, statToPoint(player, 2)], // reload time
+      [player.bulletSpeed, statToPoint(player, 3)], // bullet speed
+      [player.gunCount, statToPoint(player, 4)], // gun count
+      [player.shieldTime, statToPoint(player, 5)] // shield time
+    ]
+  }));
+};
+
+const createBot = (roomId) => {
+  if (roomId === undefined)
+    createPlayer(true);
+  else {
+    const b = new classes.Bot(++plCount, roomId);
+    rooms[roomId].players.push(b);
+    respawnBot(b);
+  }
 };
 
 const kickBot = (roomId) => {
@@ -211,18 +226,10 @@ ws.on('request', (req) => {
 
   setTimeout(() => {
     socket.send(JSON.stringify({
-      points: player.points,
       walls: room.walls,
-      powerups: room.powerups,
-      upgStats: [
-        [player.health, Math.round((player.health - 3) * 1.6)], // health
-        [player.speed, Math.round((player.speed - 1) / 1.5 * 5)], // speed
-        [player.shootInterval, Math.ceil((500 - player.shootInterval) / 240 * 5)], // reload time
-        [player.bulletSpeed, (player.bulletSpeed - 10) * 0.5], // bullet speed
-        [player.gunCount, player.gunCount - 1], // gun count
-        [player.shieldTime, (player.shieldTime - 5000) / 1000] // shield time
-      ]
+      powerups: room.powerups
     }));
+    sendStats(player);
   }, 200);
 
   const processIncome = (data) => {
@@ -262,7 +269,7 @@ ws.on('request', (req) => {
       5:  shield time
       */
       const price = Math.pow(2, statToPoint(player, data.upgrade) + 1);
-      if (player.points >= price) {
+      if (player.points >= price && price < 64) {
         player.points -= price;
         switch (data.upgrade) {
           case 0:
@@ -298,17 +305,7 @@ ws.on('request', (req) => {
             break;
         }
         // array of arrays that are raw values and percentage values
-        socket.send(JSON.stringify({
-          points: player.points,
-          upgStats: [
-            [player.health, statToPoint(player, 0)], // health
-            [player.speed, statToPoint(player, 1)], // speed
-            [player.shootInterval, statToPoint(player, 2)], // reload time
-            [player.bulletSpeed, statToPoint(player, 3)], // bullet speed
-            [player.gunCount, statToPoint(player, 4)], // gun count
-            [player.shieldTime, statToPoint(player, 5)] // shield time
-          ]
-        }));
+        sendStats(player);
       }
     }
     if (data.command && testing) {
@@ -468,18 +465,12 @@ const updatePlayer = (player) => {
           if (pl.health < 1) {
             player.points += randomRange(1, 6);
             respawn(pl);
-            if (!pl.isBot)
+            if (!pl.isBot) {
               sockets.get(pl.id).send(JSON.stringify({
-                health: pl.health, damage: 1,
-                upgStats: [
-                  [player.health, statToPoint(player, 0)], // health
-                  [player.speed, statToPoint(player, 1)], // speed
-                  [player.shootInterval, statToPoint(player, 2)], // reload time
-                  [player.bulletSpeed, statToPoint(player, 3)], // bullet speed
-                  [player.gunCount, statToPoint(player, 4)], // gun count
-                  [player.shieldTime, statToPoint(player, 5)] // shield time
-                ]
+                health: pl.health
               }));
+              sendStats(pl);
+            }
             if (!player.isBot)
               sockets.get(player.id).send(JSON.stringify({ frag: 1, points: player.points }));
           }

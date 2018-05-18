@@ -726,7 +726,6 @@ const processData = (data) => {
   }
   if (data.upgStats !== undefined) {
     shootInterval = data.upgStats[2][0];
-    console.log(shootInterval);
     minPrice = Math.min(...data.upgStats.map(a => Math.pow(2, a[1] + 1)));
     Array.prototype.forEach.call(upgradeMenu.children, (ch, i) => {
       ch.children[1].textContent = data.upgStats[i][0];
@@ -765,11 +764,6 @@ const socketize = () => {
   socket.onopen = (ev) => {
     socket.send(JSON.stringify({ nickname: player.nickname }));
     document.body.removeChild(overlay);
-
-    if (testing) {
-      command('kickBot(0)');
-      command('kickBot(0)');
-    }
   };
 
   socket.onclose = (event) => {

@@ -55,7 +55,7 @@ class Player {
     this.shootInterval = 500;
     this.bulletSpeed = 20;
 
-    this.points = 0;
+    this.points = 1000;
     this.exp = 0;
   }
   getSpeed() {
