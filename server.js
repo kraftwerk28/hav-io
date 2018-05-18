@@ -281,7 +281,7 @@ ws.on('request', (req) => {
             break;
           case 1:
             if (player.speed < 2.5) {
-              player.speed += 0.3;
+              player.speed = Math.round(player.speed + 0.3);
             }
             break;
           case 2:
