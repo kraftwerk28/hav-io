@@ -12,22 +12,21 @@ button {
   cursor: pointer;
 }
 
+button::-moz-focus-inner {
+  border: 0;
+}
+
 body * {
   font-family: 'Roboto Mono', monospace;
 }
 
 img {
-  image-rendering: crisp-edges;
+  image-rendering: optimizeSpeed;
   transition-duration: 0.3s;
 }
 
 audio {
   display: none;
-}
-
-table {
-  /* display: block; */
-  width: 100%;
 }
 
 td {
