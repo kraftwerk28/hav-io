@@ -441,6 +441,14 @@ if (typeof window.orientation !== 'undefined') {
   document.getElementById('overlay').children[1].style.transform = 'scale(0.5) translate(50%, -50%)';
 }
 
+if (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream) {
+  document.getElementById('about').style.backgroundColor = 'tomato';
+  document.getElementById('about').textContent = 'Sorry, this game is\nunavailable for your device';
+  document.getElementById('authentification').disable = 'true';
+} else {
+  document.getElementById('about').textContent = 'left click: shoot\nright click: accelerate\nearn points and upgrade your unit\n kill players to be coolest; gl hf)';
+}
+
 //#region pre-render init
 // const grad1 = ctx.createRadialGradient(x, y, 0, x, y, s * 4);
 //#endregion

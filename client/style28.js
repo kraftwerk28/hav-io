@@ -10,7 +10,19 @@
   const circleCanvases = document.getElementsByClassName('buttonCanv');
   // const circleButtons = document.getElementById('circleButton');
 
-  Array.prototype.forEach.call(circleCanvases, canvas => {
+  const fn = (canvas) => {
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+    canvas.style.opacity = 0;
+    canvas.style.backgroundColor = 'black';
+    canvas.onmouseover = () => {
+      canvas.style.opacity = 0.2;
+    };
+    canvas.onmouseout = () => {
+      canvas.style.opacity = 0;
+    }
+  };
+  Array.prototype.forEach.call(circleCanvases, fn/*canvas => {
     let offset = {};
 
     canvas.width = canvas.offsetWidth;
@@ -40,5 +52,5 @@
         }
       }, 20);
     };
-  });
+  }*/);
 })(); 

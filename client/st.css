@@ -12,6 +12,11 @@ button {
   cursor: pointer;
 }
 
+button:active {
+  transform: scale(0.9);
+  transition-duration: 0.2s;
+}
+
 button::-moz-focus-inner {
   border: 0;
 }
@@ -213,9 +218,9 @@ a {
 #about {
   text-align: center;
   resize: none;
-  height: 180px;
+  height: 120px;
   white-space: pre-line;
-  color: slateblue;
+  color: black;
 }
 
 #minimap {

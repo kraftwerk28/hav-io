@@ -164,7 +164,7 @@ const sendStats = (player) => {
     points: player.points,
     upgStats: [
       [player.health, statToPoint(player, 0)], // health
-      [player.speed, statToPoint(player, 1)], // speed
+      [Math.round(player.speed * 10) / 10, statToPoint(player, 1)], // speed
       [player.shootInterval, statToPoint(player, 2)], // reload time
       [player.bulletSpeed, statToPoint(player, 3)], // bullet speed
       [player.gunCount, statToPoint(player, 4)], // gun count
@@ -281,7 +281,8 @@ ws.on('request', (req) => {
             break;
           case 1:
             if (player.speed < 2.5) {
-              player.speed = Math.round(player.speed + 0.3);
+              console.log('speed upgrade');
+              player.speed = player.speed + 0.3;
             }
             break;
           case 2:

@@ -23,7 +23,7 @@ body {
   padding-left: 10px;
   padding-right: 10px;
   margin: 10px;
-  transition-duration: 0.5s;
+  /* transition-duration: 0.5s; */
   pointer-events: visiblePainted;
 }
 
