@@ -444,7 +444,7 @@ if (typeof window.orientation !== 'undefined') {
 if (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream) {
   document.getElementById('about').style.backgroundColor = 'tomato';
   document.getElementById('about').textContent = 'Sorry, this game is\nunavailable for your device';
-  document.getElementById('authentification').disable = 'true';
+  document.getElementById('authentification').disabled = 'true';
 } else {
   document.getElementById('about').textContent = 'left click: shoot\nright click: accelerate\nearn points and upgrade your unit\n kill players to be coolest; gl hf)';
 }
