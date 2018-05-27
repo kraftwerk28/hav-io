@@ -137,6 +137,8 @@ window.onerror = (msg, url, line, column) => {
 
 };
 
+document.exitFullscreen
+
 const overlay = document.getElementById('authoverlay');
 const auth = () => {
   document.getElementById('loader').style.visibility = 'visible';
@@ -242,7 +244,6 @@ upgradeBtn.onclick = () => {
     arrow.style.transform = 'rotateX(0deg)';
   }
 };
-
 
 // minimap
 const minimap = document.getElementById('minimap');
@@ -379,12 +380,14 @@ const mobilize = () => {
   };
   // mobSpeedup.style.backgroundImage
   canvas.ontouchstart = (e) => {
-    if (e.touches.length < 2) {
+    // connected.textContent = e.targetTouches.length;
+    if (e.targetTouches.length < 2) {
       touches.sx = e.changedTouches[0].clientX;
       touches.sy = e.changedTouches[0].clientY;
     }
-    else
+    else {
       shoot();
+    }
   };
   canvas.ontouchmove = (e) => {
     touches.is = true;
@@ -397,8 +400,10 @@ const mobilize = () => {
     socket.send(JSON.stringify({ vec: [...vec.map(v => v / l)] }));
   };
   canvas.ontouchend = (e) => {
-    touches.is = false;
-    touches.reset();
+    if (e.target === canvas) {
+      touches.is = false;
+      touches.reset();
+    }
   }
   // document.body.style.transform = 'rotate(90deg)';
   // document.body.style.position = 'absolute';
@@ -412,7 +417,11 @@ if (typeof window.orientation !== 'undefined') {
   // document.getElementById('authentification').disabled = true;
   // document.getElementById('about').textContent = 'Sorry, this game is for desktops only yet((';
   // document.getElementById('about').style.backgroundColor = 'crimson';
-
+  document.onfullscreenchange = () => {
+    document.getElementById('fullScreen').hidden =
+      document.fullscreenEnabled || document.webkitIsFullScreen;
+  };
+  document.body.onwebkitfullscreenchange = document.onfullscreenchange;
   document.getElementById('authentification').onclick = () => {
     auth();
     document.getElementById('mob').style.display = 'none';
@@ -448,10 +457,6 @@ if (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream) {
 } else {
   document.getElementById('about').textContent = 'left click: shoot\nright click: accelerate\nearn points and upgrade your unit\n kill players to be coolest; gl hf)';
 }
-
-//#region pre-render init
-// const grad1 = ctx.createRadialGradient(x, y, 0, x, y, s * 4);
-//#endregion
 
 const getPlColor = (val) => {
   switch (val) {

@@ -1,20 +1,26 @@
 body {
+  background-color: black;
   /* position: fixed; */
   color: white;
-  font-family: 'Roboto Mono', monospace;
   background-color: rgba(0, 0, 0, 0.4);
   height: 0;
   overflow: hidden;
   user-select: none;
 }
 
+* {
+  -webkit-tap-highlight-color: transparent;
+  font-family: 'Roboto Mono', monospace;
+}
+
 button {
   cursor: pointer;
+  transition-duration: 0.1s;
 }
 
 button:active {
   transform: scale(0.9);
-  transition-duration: 0.2s;
+  transition-duration: 0.1s;
 }
 
 button::-moz-focus-inner {
@@ -353,11 +359,11 @@ a {
   animation-timing-function: ease;
 }
 
-#mobShoot::before, mobSpeedup::before {
-  width: 70px;
-  height: 70px;
+/* #mobShoot, #mobSpeedup {
+  width: 70px !important;
+  height: 70px !important;
   margin: 0px;
-}
+} */
 
 .header {
   color: deeppink;

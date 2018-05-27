@@ -352,8 +352,6 @@ ws.on('request', (req) => {
   });
 });
 
-/* -----MAIN SERVER CLOCK----- */
-
 const updatePlayer = (player) => {
 
   player.x += player.vector[0] * player.getSpeed();
@@ -563,6 +561,7 @@ const updateBot = (bot) => {
   updatePlayer(bot);
 };
 
+/* -----MAIN SERVER CLOCK----- */
 setInterval(() => {
   // const data = [];
   // console.log(rooms.map(r => r.players));
