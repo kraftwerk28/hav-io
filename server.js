@@ -1,5 +1,9 @@
+/**
+ * Main server-side script
+ */
 'use strict';
 
+// linking external packages
 const testing = !1,
   fs = require('fs'),
   http = require('http'),
@@ -11,33 +15,7 @@ const testing = !1,
   files = {},
   port = testing ? 8080 : 80;
 
-let startUsage = process.cpuUsage();
-
 //#region static routing and server init
-const readR = (root, path) => {
-  const getFilenames = (path, prefix) => {
-    if (fs.lstatSync(root + prefix + path).isDirectory()) {
-      return fs.readdirSync(root + prefix + path).map(val => getFilenames(val, prefix + path + '/'));
-    } else {
-      return prefix + path;
-    }
-  };
-
-  const flatty = (arr) => {
-    if (!Array.isArray(arr)) return [arr];
-    return arr.reduce((flat, toFlat) => (
-      flat.concat(Array.isArray(toFlat) ? flatty(toFlat) : toFlat)
-    ), [])
-  };
-
-  return flatty(getFilenames(path, ''));
-};
-
-readR('client/', '').forEach(f => {
-  const key = (f === '/welcome.html' ? '/' : f);
-  files[key] = fs.readFileSync('./client/' + f);
-});
-
 const route = (url) => {
   if (url === '/' || url === '/nosocket') return './client/index.html';
   if (url.startsWith('/err')) {
@@ -63,25 +41,16 @@ server.on('error', (err) => {
 server.listen(port, () => { console.log(`Server listen on ${port}`) });
 //#endregion
 
-const getUsage = (value) => {
-  let cnt = Math.round(value / 10000);
-  let res = '';
-  while (cnt > 0) {
-    res += '|';
-    cnt--;
-  }
-  return res;
-};
-
-const rooms = [];
-const sockets = new Map();
-const maxPl = 10;
-const mapsize = 1500;
-const wallCount = mapsize / 20;
-const spawnerCount = 6;
+const rooms = []; // playing rooms
+const sockets = new Map(); // sockets
+const maxPl = 10; // max players per room
+const mapsize = 1500; // size of map in pixels
+const wallCount = mapsize / 20; // count of walls per room
+const spawnerCount = 6; // count of spawnpoints
 let plCount = -1;
 const rotDelta = 0.1;
 
+// custom functions
 const randomRange = (start, end) => {
   return Math.floor(Math.random() * end + start)
 };
@@ -117,6 +86,7 @@ const statToPoint = (player, val) => {
   }
 };
 
+// player instance creation
 const createPlayer = (isBot) => {
   let p;
   const sendNicks = () => {
@@ -173,6 +143,7 @@ const sendStats = (player) => {
   }));
 };
 
+// bot instance creation
 const createBot = (roomId) => {
   if (roomId === undefined)
     createPlayer(true);
@@ -204,6 +175,7 @@ const setTarget = (roomId, x, y) => {
   rooms[roomId].players.filter(p => p.isBot)[0].target = [x, y];
 };
 
+// initializing nwe websocket
 const ws = new WebSocket({
   httpServer: server,
   autoAcceptConnections: false,
@@ -352,6 +324,10 @@ ws.on('request', (req) => {
   });
 });
 
+/**
+ * updating player
+ * contains processing for collisions, kills, moving etc.
+ */
 const updatePlayer = (player) => {
 
   player.x += player.vector[0] * player.getSpeed();
@@ -366,17 +342,11 @@ const updatePlayer = (player) => {
   if (player.y - player.size < 0) player.y = player.size;
   if (player.y + player.size > mapsize) player.y = mapsize - player.size;
 
-  // if (player.x - player.size < 0 || player.x + player.size > mapsize)
-  //   player.vector[0] = -player.vector[0];
-  // if (player.y - player.size < 0 || player.y + player.size > mapsize)
-  //   player.vector[1] = -player.vector[1];
-
   // wall colliding
   rooms[player.roomId]
     .walls
     .filter(w => distance(w.x, w.y, player.x, player.y) < 100)
     .forEach(wall => {
-      // console.log(wall);
       const x = wall.x;
       const y = wall.y;
       if (player.x - player.size < x + wall.w && player.x + player.size > x &&
@@ -388,11 +358,10 @@ const updatePlayer = (player) => {
             player.y = y - player.size// - player.speed;
         } else if (player.y > y && player.y < y + wall.h) {
           if (player.x > x)
-            player.x = x + wall.w + player.size// + player.speed;
+            player.x = x + wall.w + player.size;
           if (player.x < x)
-            player.x = x - player.size// - player.speed;
+            player.x = x - player.size;
         }
-        // return true;
       }
     });
   // powerup colliding
@@ -448,7 +417,6 @@ const updatePlayer = (player) => {
           b.y > wall.y &&
           b.y < wall.y + wall.h) {
           player.bullets.splice(i, 1);
-          // i--;
           return true;
         }
       });
@@ -475,7 +443,6 @@ const updatePlayer = (player) => {
           }
 
           player.bullets.splice(i, 1);
-          // i--;
           return true;
         }
       });
@@ -484,6 +451,7 @@ const updatePlayer = (player) => {
 
 };
 
+// AI function for bot
 const updateBot = (bot) => {
   const radius = 50;
   const sideDelta = 25;
@@ -548,13 +516,6 @@ const updateBot = (bot) => {
     );
   }
 
-  // if (collides(bot.x, bot.y)) {
-  //   
-  // } else if (bot.target) {
-
-
-  // }
-
   if (Math.random() < 0.05) {
     bot.shoot();
   }
@@ -563,11 +524,8 @@ const updateBot = (bot) => {
 
 /* -----MAIN SERVER CLOCK----- */
 setInterval(() => {
-  // const data = [];
-  // console.log(rooms.map(r => r.players));
   rooms.forEach((room) => {
     room.players.forEach((player, index) => {
-      // console.log(player);
       if (player.isBot)
         updateBot(player);
       else {
@@ -583,56 +541,43 @@ setInterval(() => {
             pl.bullets.map(b => [Math.round(b.x), Math.round(b.y)]),
             pl.id
           ]),
-          // b: room.bots.map(pl => [
-          //   Math.round(pl.x),
-          //   Math.round(pl.y),
-          //   Math.round(Math.atan2(pl.vector[1], pl.vector[0]) * 100) / 100,
-          //   pl.health,
-          //   pl.speed,
-          //   Number(pl.vulnerable),
-          //   pl.bullets.map(b => [Math.round(b.x), Math.round(b.y)]),
-          //   pl.id
-          // ]),
           id: index
         }));
       }
 
     });
-    // room.bots.forEach(bot => {
-    //   updateBot(bot);
-    // });
   });
+}, 1000 / 50); // 60 frames per second
 
-}, 1000 / 50);
-
+// powerup spawner
 setInterval(() => {
   if (Math.random() < 0.3) {
     spawnPowerup();
   }
 }, 5000);
 
+// respawning and resetting player entity
 const respawn = (player) => {
   player.x = rooms[player.roomId].spawnpoints[randomRange(0, spawnerCount)].x;
   player.y = rooms[player.roomId].spawnpoints[randomRange(0, spawnerCount)].y;
   player.vector = [1, 0];
-  // player.deaths++;
 
   player.reset();
   player.vulnerable = false;
   player.health = player.maxHealth;
   setTimeout(() => {
-    // console.log('unshield' + player.id);
     player.vulnerable = true;
-
   }, 2000);
 
 };
 
+// respawning bot
 const respawnBot = (bot) => {
   respawn(bot);
   bot.health = bot.maxHealth;
 }
 
+// generating walls set for room
 const generateWalls = (ind) => {
   for (let i = 0; i < wallCount; i++) {
     rooms[ind].walls.push(new classes.Wall(randomRange(0, mapsize / 50) * 50, randomRange(0, mapsize / 50) * 50, 50, 50));

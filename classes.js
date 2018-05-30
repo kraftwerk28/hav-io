@@ -1,3 +1,6 @@
+/**
+ * Class container module
+ */
 'use strict';
 
 const _vector = require('./vector');

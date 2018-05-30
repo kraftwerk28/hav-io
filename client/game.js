@@ -1,3 +1,6 @@
+/**
+ * Main client-side script
+ */
 'use strict';
 
 const testing = !1,
@@ -195,7 +198,7 @@ nicknameinput.onkeydown = (e) => {
   }
 };
 
-
+// ipgrade menu setup
 let upMenuFlag = false;
 const
   upgradeBtn = document.getElementById('upgradeBtn'),
@@ -251,8 +254,7 @@ const minictx = minimap.getContext('2d');
 minictx.fillStyle = 'lime';
 minictx.strokeStyle = 'lime';
 
-
-// main canvas
+// main canvas setup
 const canvas = document.getElementById('game');
 canvas.style.animationPlayState = 'paused';
 const ctx = canvas.getContext('2d');
@@ -278,13 +280,11 @@ canvas.onmouseleave = () => {
   speedup(false);
   lClick = false;
   rClick = false;
-}
+};
 
 canvas.onmouseenter = () => {
   canvOffset = canvas.getBoundingClientRect();
-}
-
-// canvas.oncontextmenu = () => false;
+};
 
 canvas.onmousedown = (e) => {
   e.preventDefault();
@@ -300,6 +300,7 @@ canvas.onmousedown = (e) => {
       speedup(true);
   }
 };
+
 canvas.onmouseup = (e) => {
   e.preventDefault();
   if (e.button === 0) {
@@ -310,7 +311,7 @@ canvas.onmouseup = (e) => {
     rClick = false;
     speedup(false);
   }
-}
+};
 
 // images init
 const wallimg = new Image();
@@ -378,7 +379,7 @@ const mobilize = () => {
   mobShoot.ontouchend = () => {
     shoot(false);
   };
-  // mobSpeedup.style.backgroundImage
+
   canvas.ontouchstart = (e) => {
     // connected.textContent = e.targetTouches.length;
     if (e.targetTouches.length < 2) {
@@ -391,8 +392,8 @@ const mobilize = () => {
   };
   canvas.ontouchmove = (e) => {
     touches.is = true;
-    touches.x = e.changedTouches[0].clientX;
-    touches.y = e.changedTouches[0].clientY;
+    touches.x = e.targetTouches[0].clientX;
+    touches.y = e.targetTouches[0].clientY;
     const x = touches.x - canvOffset.x;
     const y = touches.y - canvOffset.y;
     const vec = [touches.x - touches.sx/* - player.x + viewport.x*/, touches.y - touches.sy/* - player.y + viewport.y*/];
@@ -405,12 +406,11 @@ const mobilize = () => {
       touches.reset();
     }
   }
-  // document.body.style.transform = 'rotate(90deg)';
-  // document.body.style.position = 'absolute';
-  // document.body.style.right = '0px';
-  // document.body.style.top = '0px';
+
+  upgradeBtn.ontouchend = upgradeBtn.onclick;
 };
 
+// making compatible with mobile devices
 if (typeof window.orientation !== 'undefined') {
   if (window.orientation === 0 || window.orientation === 180)
     document.getElementById('mob').style.display = 'inline';
@@ -450,6 +450,7 @@ if (typeof window.orientation !== 'undefined') {
   document.getElementById('overlay').children[1].style.transform = 'scale(0.5) translate(50%, -50%)';
 }
 
+// disallow for iPhones
 if (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream) {
   document.getElementById('about').style.backgroundColor = 'tomato';
   document.getElementById('about').textContent = 'Sorry, this game is\nunavailable for your device';
@@ -477,6 +478,7 @@ const getPlColor = (val) => {
   }
 };
 
+// color-by-number
 const rainbow = (val) => {
   switch (val) {
     case 0:
@@ -496,6 +498,7 @@ const rainbow = (val) => {
   }
 }
 
+// main rendering function
 const render = (data) => {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   minictx.clearRect(0, 0, minimap.width, minimap.height);
@@ -688,6 +691,7 @@ const render = (data) => {
   }
 };
 
+// parsing income data
 const processData = (data) => {
   if (data.p) {
     const info = data.p[data.id];
@@ -765,6 +769,7 @@ const processData = (data) => {
   render(data);
 };
 
+// initializing sockets on client-side
 const socketize = () => {
   socket = new WebSocket(testing ? testURL : nativeURL);
 
@@ -828,9 +833,7 @@ const interpolate = (start, end) => (
 
 const reload = () => {
   socket.close();
-  // setInterval(() => {
   location.replace('/');
-  // }, 200)
 };
 
 const mute = () => {
@@ -873,56 +876,6 @@ const clearSpaces = s => {
   if (s === ' ')
     return '';
   return s;
-};
-
-const calcCollisions = () => {
-
-  for (let i = 0; i < walls.length; i++) {
-    const wall = walls[i];
-    const x = wall.x * 50;
-    const y = wall.y * 50;
-
-    for (let i = 0; i < player.bullets.length; i++) {
-      const b = player.bullets[i];
-      if (b.x - 2 < x + wall.w && b.x + 2 > x &&
-        b.y + 2 > y && b.y - 2 < y + wall.h) {
-        player.bullets.splice(i, 1);
-        socket.emit('updateMe', player);
-        break;
-      }
-    }
-
-    const s = player.speed;
-    const fdx = player.vector.x * player.speed;
-    const fdy = player.vector.y * player.speed;
-
-    if (player.x - player.size + fdx < x + wall.w && player.x + player.size + fdx > x &&
-      player.y + player.size + fdy > y && player.y - player.size + fdy < y + wall.h) {
-
-      if (player.x > x && player.x < x + wall.w) {
-        if (player.y > y)
-          player.y = y + wall.h + player.size// + player.speed;
-        if (player.y < y)
-          player.y = y - player.size// - player.speed;
-      } else if (player.y > y && player.y < y + wall.h) {
-        if (player.x > x)
-          player.x = x + wall.w + player.size// + player.speed;
-        if (player.x < x)
-          player.x = x - player.size// - player.speed;
-      }
-
-      // syncEmit(() => {
-      socket.emit('updateMe', player);
-      // })
-
-      // syncEmit(() => {
-      //   socket.emit('updateMe', player);
-      // })
-      break;
-    }
-    // player.collides = false;
-  }
-
 };
 
 const goFullScreen = () => {

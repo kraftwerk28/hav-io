@@ -1,3 +1,6 @@
+/**
+ * Package contains all required vector functions used in game
+ */
 'use strict';
 
 const toDeg = rad => rad * 57.3;
