@@ -49,6 +49,13 @@ let
   shClock,
   shootInterval = 0;
 
+requestAnimationFrame =
+  requestAnimationFrame ||
+  webkitRequestAnimationFrame ||
+  window.requestAnimationFrame ||
+  window.mozRequestAnimationFrame ||
+  window.webkitRequestAnimationFrame ||
+  window.msRequestAnimationFrame;
 // virtual 'camera'
 const viewport = {
   x: 0,
