@@ -139,19 +139,15 @@ class Player {
     this.shieldTime = 5000;
     this.shootInterval = 500;
     this.bulletSpeed = 10;
-
-    // this.points = 0;
   }
 };
 
 class Bot extends Player {
   constructor(id, roomId) {
     super(id, roomId);
-    // this.vector = [0, 1];
     this.vulnerable = true;
     this.nickname = 'bot';
     this.target = null;
-    // this.isTergetting = true;
     this.isBot = true;
   }
 }

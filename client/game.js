@@ -9,7 +9,6 @@ const testing = !1,
 let
   socket = null,
 
-  syncEmit = (callback) => { awaitFunc = callback },
   player = {
     x: 0,
     y: 0,
@@ -31,13 +30,13 @@ let
     reset() { this.sx = this.x; this.sy = this.y }
   },
 
-  awaitFunc = null,
   bulletClock,
   canvOffset = {},
   rClick = false,
   lClick = false,
 
   pingStart = 0,
+  pingElapsed = true,
   size = 1500,
   canvasCenter = {},
   loaded = false,
@@ -50,6 +49,7 @@ let
   shClock,
   shootInterval = 0;
 
+// virtual 'camera'
 const viewport = {
   x: 0,
   y: 0,
@@ -76,6 +76,7 @@ let kills = 0,
   walls = [],
   powerups = [];
 
+// send indepentent http SET reqest
 const sendHTTP = (data) => {
   const xhr = new XMLHttpRequest();
   xhr.open('POST', 'err=' + data.toString(), false);
@@ -88,13 +89,10 @@ window.onload = () => {
   kills = localStorage.getItem('haviokills') ? localStorage.getItem('haviokills') : 0;
   deaths = localStorage.getItem('haviodeaths') ? localStorage.getItem('haviodeaths') : 0;
   updatescore();
-  if (n)
-    syncEmit(() => {
-      player.nickname = n;
-      // socket.emit('updateMe', player);
-      nicknameinput.value = n;
-    });
-
+  if (n) {
+    player.nickname = n;
+    nicknameinput.value = n;
+  }
   viewport.init(canvas.width, canvas.height);
   canvasCenter = {
     cx: Math.floor(canvas.width / 2),
@@ -124,11 +122,9 @@ window.onresize = (e) => {
 
 window.onscroll = (e) => {
   e.preventDefault();
-  // canvOffset = canvas.getBoundingClientRect();
 };
 
 window.onerror = (msg, url, line, column) => {
-  // console.error(e);
   if (true) {
     if (socket && socket.readyState === 1)
       socket.send(JSON.stringify({
@@ -152,7 +148,6 @@ const auth = () => {
       }, 500);
     } else {
       overlay.style.animationPlayState = 'running';
-      // overlay.style.display = 'none';
       socketize();
       sfx.soundtrack.play();
     }
@@ -198,14 +193,13 @@ nicknameinput.onkeydown = (e) => {
   }
 };
 
-// ipgrade menu setup
+// upgrade menu setup
 let upMenuFlag = false;
 const
   upgradeBtn = document.getElementById('upgradeBtn'),
   arrow = upgradeBtn.children[0],
   upgradeMenu = document.getElementById('upgradeMenu');
 
-// upgradeBtn.style.animationPlayState = 'paused';
 Array.prototype.forEach.call(
   upgradeMenu.children,
   c => {
@@ -215,10 +209,8 @@ Array.prototype.forEach.call(
     }, 300);
   }
 );
-// upgradeBtn.appendChild(arrow);
-// upgradeBtn.appendChild(upgradeMenu);
+
 upgradeBtn.onclick = () => {
-  // upgradeBtn.style.animationPlayState = 'paused';
   upgradeBtn.style.animationName = '';
   upMenuFlag = !upMenuFlag;
   if (upMenuFlag) {
@@ -237,7 +229,6 @@ upgradeBtn.onclick = () => {
       upgradeMenu.children,
       c => {
         c.style.visibility = 'hidden';
-        // c.style.display = 'none';
       }
     );
     upgradeMenu.style.height = '0px';
@@ -259,8 +250,8 @@ const canvas = document.getElementById('game');
 canvas.style.animationPlayState = 'paused';
 const ctx = canvas.getContext('2d');
 ctx.imageSmoothingEnabled = false;
-canvas.width = window.innerWidth;//900;
-canvas.height = window.innerHeight;//550;
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
 ctx.strokeStyle = 'yellow';
 ctx.font = '10px Roboto Mono';
 ctx.textAlign = 'center';
@@ -366,7 +357,6 @@ const mobilize = () => {
   document.getElementById('mute').style.display = 'none';
   mobSpeedup.style.display = 'inline';
   mobShoot.style.display = 'inline';
-  // speedup(true);
   mobSpeedup.ontouchstart = () => {
     speedup(true);
   };
@@ -381,7 +371,6 @@ const mobilize = () => {
   };
 
   canvas.ontouchstart = (e) => {
-    // connected.textContent = e.targetTouches.length;
     if (e.targetTouches.length < 2) {
       touches.sx = e.changedTouches[0].clientX;
       touches.sy = e.changedTouches[0].clientY;
@@ -396,7 +385,7 @@ const mobilize = () => {
     touches.y = e.targetTouches[0].clientY;
     const x = touches.x - canvOffset.x;
     const y = touches.y - canvOffset.y;
-    const vec = [touches.x - touches.sx/* - player.x + viewport.x*/, touches.y - touches.sy/* - player.y + viewport.y*/];
+    const vec = [touches.x - touches.sx, touches.y - touches.sy];
     const l = Math.sqrt(Math.pow(vec[0], 2) + Math.pow(vec[1], 2));
     socket.send(JSON.stringify({ vec: [...vec.map(v => v / l)] }));
   };
@@ -407,16 +396,13 @@ const mobilize = () => {
     }
   }
 
-  upgradeBtn.ontouchend = upgradeBtn.onclick;
+  // upgradeBtn.addEventListener('cl') = upgradeBtn.onclick;
 };
 
 // making compatible with mobile devices
 if (typeof window.orientation !== 'undefined') {
   if (window.orientation === 0 || window.orientation === 180)
     document.getElementById('mob').style.display = 'inline';
-  // document.getElementById('authentification').disabled = true;
-  // document.getElementById('about').textContent = 'Sorry, this game is for desktops only yet((';
-  // document.getElementById('about').style.backgroundColor = 'crimson';
   document.onfullscreenchange = () => {
     document.getElementById('fullScreen').hidden =
       document.fullscreenEnabled || document.webkitIsFullScreen;
@@ -504,8 +490,6 @@ const render = (data) => {
   minictx.clearRect(0, 0, minimap.width, minimap.height);
   minictx.strokeRect(0, 0, minimap.width, minimap.height);
   ctx.lineWidth = 1;
-  // console.log(data);
-  // viewport.center(player.x, player.y);
 
   canvas.style.backgroundPosition = `${-viewport.x}px ${-viewport.y}px`;
 
@@ -579,14 +563,12 @@ const render = (data) => {
       mygrad.addColorStop(0, ctx.fillStyle);
       mygrad.addColorStop(1, 'transparent');
       ctx.fillStyle = mygrad;
-      // ctx.beginPath();
       ctx.arc(x, y, s * 4, 0, Math.PI * 2);
       ctx.fill();
     }
   }
   if (data.b) {
     data.b.forEach(p => {
-      // console.log(p);
       const s = player.size;
       let x = Math.round(p[0]);
       let y = Math.round(p[1]);
@@ -655,10 +637,6 @@ const render = (data) => {
     powerups = data.powerups;
   }
 
-  // ctx.fillStyle = ctx.createPattern(wallimg, 'repeat');
-
-  // calcCollisions();
-
   powerups.forEach((pu, i) => {
     const x = pu.x;
     const y = pu.y;
@@ -697,9 +675,6 @@ const processData = (data) => {
     const info = data.p[data.id];
     player.x = info[0];
     player.y = info[1];
-    // player.health = info[3];
-    // player.vector[0] = info[2];
-    // player.vector[1] = info[3];
   }
   if (data.health !== undefined) {
     player.health = data.health;
@@ -714,7 +689,6 @@ const processData = (data) => {
     } else {
       sfx.hit.play();
       screenEffects.hit();
-      // updateHealth(player.health);
     }
     return;
   }
@@ -725,7 +699,6 @@ const processData = (data) => {
   if (data.powerup !== undefined) {
     switch (data.powerup) {
       case 'heart':
-        // updateHealth(player.health);
         screenEffects.heal();
         sfx.heartPick.play();
         break;
@@ -749,7 +722,6 @@ const processData = (data) => {
       ch.children[2].textContent =
         Math.pow(2, data.upgStats[i][1] + 1) >= 64 ? 'MAX' :
           Math.pow(2, data.upgStats[i][1] + 1);
-
       ch.style.backgroundColor = rainbow(data.upgStats[i][1]);
     });
   }
@@ -765,8 +737,13 @@ const processData = (data) => {
   if (data.console) {
     console.log(data.console);
   }
-
-  render(data);
+  if (data === 'p') {
+    pingStart = Date.now() - pingStart;
+    document.getElementById('ping').textContent = pingStart;
+  }
+  requestAnimationFrame(() => { render(data); });
+  // window.requestAnimationFrame(render);
+  // render(data);
 };
 
 // initializing sockets on client-side
@@ -776,12 +753,15 @@ const socketize = () => {
   socket.onmessage = (ev) => {
     const data = JSON.parse(ev.data);
     processData(data);
-    // render(data);
   };
 
   socket.onopen = (ev) => {
     socket.send(JSON.stringify({ nickname: player.nickname }));
     document.body.removeChild(overlay);
+    setInterval(() => {
+      pingStart = Date.now();
+      socket.send('"p"');
+    }, 1000);
   };
 
   socket.onclose = (event) => {
@@ -797,6 +777,7 @@ const socketize = () => {
   };
 };
 
+// custom functions 
 const upgrade = (index) => {
   socket.send(`{"upgrade":${index}}`);
 };

@@ -53,9 +53,7 @@ a {
 
 #game {
   background-image: url('./img/floor.png');
-  /* margin: 10px; */
-  /* box-shadow: 0px 0px 30px 2px grey; */
-  /* border-radius: 5px; */
+  background-color: black;
   z-index: -1;
   position: absolute;
   top: 0;
@@ -106,6 +104,7 @@ a {
   left: 0;
   right: 0;
   bottom: 0;
+  background-color: black;
   background-image: url('./img/floor.png');
   animation-duration: 1s;
   animation-name: overlay;
