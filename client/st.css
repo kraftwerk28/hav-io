@@ -377,3 +377,48 @@ a {
   font-size: large;
   /* font-family: 'Consolas', 'Courier New', Courier, monospace; */
 }
+
+@keyframes gh {
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes ghr {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+#githublogo {
+  animation-play-state: running;
+  animation-name: gh;
+  animation-duration: 2s;
+  animation-iteration-count: infinite;
+  transition-duration: 1s;
+}
+
+#followme {
+  position: relative;
+  display: inline-block;
+  margin: auto;
+}
+
+#followme:hover>img {
+  animation-name: ghr;
+  animation-duration: 1s;
+  animation-iteration-count: 1;
+  /* transition-duration: 1s; */
+}
+
+#followme>a {
+  position: absolute;
+  left: 0px;
+  right: 0px;
+  top: 0px;
+  bottom: 0px;
+  z-index: 1;
+}
