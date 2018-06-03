@@ -232,7 +232,11 @@ upgradeBtn.onclick = () => {
     upgradeMenu.style.opacity = '1';
     arrow.style.transform = 'rotateX(180deg)';
     upgradeMenu.addEventListener('mouseleave',
-      () => { setTimeout(() => { upgradeBtn.click(); }, 1000); },
+      () => {
+        setTimeout(() => {
+          if (upMenuFlag) upgradeBtn.click();
+        }, 1000);
+      },
       { once: true });
   } else {
     Array.prototype.forEach.call(
