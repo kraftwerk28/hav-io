@@ -231,6 +231,9 @@ upgradeBtn.onclick = () => {
     upgradeMenu.style.height = '260px';
     upgradeMenu.style.opacity = '1';
     arrow.style.transform = 'rotateX(180deg)';
+    upgradeMenu.addEventListener('mouseleave',
+      () => { setTimeout(() => { upgradeBtn.click(); }, 1000); },
+      { once: true });
   } else {
     Array.prototype.forEach.call(
       upgradeMenu.children,
