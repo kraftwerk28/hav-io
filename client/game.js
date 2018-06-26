@@ -3,7 +3,7 @@
  */
 'use strict';
 
-const testing = 1,
+const testing = !1,
   testURL = 'ws://127.0.0.1:8080' + location.pathname,
   nativeURL = 'ws://kraftwerk28.pp.ua:8090';
 let
