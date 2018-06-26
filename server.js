@@ -4,14 +4,14 @@
 'use strict';
 
 // linking external packages
-const testing = !1;
+const testing = 1;
 const fs = require('fs');
 const http = require('http');
 const qs = require('querystring');
 const WebSocket = require('websocket').server;
 const classes = require('./classes');
 const _vector = require('./vector');
-const port = testing ? 8080 : 80;
+const port = testing ? 8080 : 8090;
 
 //#region static routing and server init
 const route = (url) => {

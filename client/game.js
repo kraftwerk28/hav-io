@@ -3,9 +3,9 @@
  */
 'use strict';
 
-const testing = !1,
-  testURL = 'ws://192.168.0.101:8080' + location.pathname,
-  nativeURL = 'ws://kraftwerk28.pp.ua';
+const testing = 1,
+  testURL = 'ws://127.0.0.1:8080' + location.pathname,
+  nativeURL = 'ws://kraftwerk28.pp.ua:8090';
 let
   socket = null,
 
@@ -56,6 +56,7 @@ requestAnimationFrame =
   window.mozRequestAnimationFrame ||
   window.webkitRequestAnimationFrame ||
   window.msRequestAnimationFrame;
+
 // virtual 'camera'
 const viewport = {
   x: 0,
@@ -118,14 +119,14 @@ window.oncontextmenu = () => false;
 
 window.onwheel = (e) => {
   e.preventDefault();
-}
+};
 
 window.onresize = (e) => {
   canvOffset = canvas.getBoundingClientRect();
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
   viewport.init(canvas.width, canvas.height);
-}
+};
 
 window.onscroll = (e) => {
   e.preventDefault();
@@ -142,8 +143,6 @@ window.onerror = (msg, url, line, column) => {
   }
 
 };
-
-document.exitFullscreen
 
 const overlay = document.getElementById('authoverlay');
 const auth = () => {
@@ -178,7 +177,7 @@ const sfx = {
   heartPick: new Audio('./sfx/HeartPickup.wav'),
   shieldPick: new Audio('./sfx/ShieldPickup.wav'),
   hit: new Audio('./sfx/Hit.wav'),
-}
+};
 sfx.soundtrack.loop = true;
 sfx.soundtrack.volume = 0.5;
 sfx.soundtrack.oncanplaythrough = () => { loaded = true; }
@@ -380,7 +379,7 @@ const mobilize = () => {
   mobShoot.ontouchstart = () => {
     shoot(true);
   };
-  mobShoot.ontouchend = () => {
+  mobShoot.ontouchend = (e) => {
     shoot(false);
   };
 
