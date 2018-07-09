@@ -93,13 +93,16 @@ a {
 }
 
 @keyframes overlay {
-  100% {
-    transform: translate(0, -100%);
+  from {
+    transform: translateY(0%);
+  }
+  to {
+    transform: translateY(-100%);
   }
 }
 
 #authoverlay {
-  position: absolute;
+  position: fixed;
   z-index: 3;
   top: 0;
   left: 0;

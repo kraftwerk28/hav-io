@@ -3,9 +3,10 @@
  */
 'use strict';
 
-const testing = !1,
+const testing = 1,
   testURL = 'ws://127.0.0.1:8080' + location.pathname,
-  nativeURL = 'ws://kraftwerk28.pp.ua:8090';
+  nativeURL = 'ws://kraftwerk28.pp.ua:8090',
+  $ = (s) => document.getElementById(s);
 let
   socket = null,
 
@@ -94,8 +95,10 @@ const sendHTTP = (data) => {
 window.onload = () => {
   muteButton.style.backgroundImage = 'url(\'./img/Mute.png\')';
   const n = localStorage.getItem('havionick');
-  kills = localStorage.getItem('haviokills') ? localStorage.getItem('haviokills') : 0;
-  deaths = localStorage.getItem('haviodeaths') ? localStorage.getItem('haviodeaths') : 0;
+  kills = localStorage.getItem('haviokills') ?
+    localStorage.getItem('haviokills') : 0;
+  deaths = localStorage.getItem('haviodeaths') ?
+    localStorage.getItem('haviodeaths') : 0;
   updatescore();
   if (n) {
     player.nickname = n;
@@ -144,9 +147,9 @@ window.onerror = (msg, url, line, column) => {
 
 };
 
-const overlay = document.getElementById('authoverlay');
+const overlay = $('authoverlay');
 const auth = () => {
-  document.getElementById('loader').style.visibility = 'visible';
+  $('loader').style.visibility = 'visible';
   const check = () => {
     if (!loaded) {
       setTimeout(() => {
@@ -183,11 +186,12 @@ sfx.soundtrack.volume = 0.5;
 sfx.soundtrack.oncanplaythrough = () => { loaded = true; }
 
 const
-  heartContainer = document.getElementById('heartContainer'),
-  muteButton = document.getElementById('mute'),
-  connected = document.getElementById('connected'),
-  _roomId = document.getElementById('roomId'),
-  nicknameinput = document.getElementById('nick');
+  heartContainer = $('heartContainer'),
+  muteButton = $('mute'),
+  connected = $('connected'),
+  _roomId = $('roomId'),
+  nicknameinput = $('nick'),
+  fullscreenBtn = $('fullScreen');
 nicknameinput.oninput = (e) => {
   localStorage.setItem('havionick', nicknameinput.value);
   player.nickname = nicknameinput.value;
@@ -199,12 +203,22 @@ nicknameinput.onkeydown = (e) => {
   }
 };
 
+$('authentification').onclick = () => {
+  auth();
+};
+
+Array.prototype.forEach.call(document.getElementsByClassName('upBtn'), el => {
+  el.onclick = () => {
+    upgrade(parseInt(el.id));
+  }
+});
+
 // upgrade menu setup
 let upMenuFlag = false;
 const
-  upgradeBtn = document.getElementById('upgradeBtn'),
+  upgradeBtn = $('upgradeBtn'),
   arrow = upgradeBtn.children[0],
-  upgradeMenu = document.getElementById('upgradeMenu');
+  upgradeMenu = $('upgradeMenu');
 
 Array.prototype.forEach.call(
   upgradeMenu.children,
@@ -252,14 +266,16 @@ upgradeBtn.onclick = () => {
   }
 };
 
+fullscreenBtn.onclick = () => { goFullScreen(); }
+
 // minimap
-const minimap = document.getElementById('minimap');
+const minimap = $('minimap');
 const minictx = minimap.getContext('2d');
 minictx.fillStyle = 'lime';
 minictx.strokeStyle = 'lime';
 
 // main canvas setup
-const canvas = document.getElementById('game');
+const canvas = $('game');
 canvas.style.animationPlayState = 'paused';
 const ctx = canvas.getContext('2d');
 ctx.imageSmoothingEnabled = false;
@@ -365,9 +381,9 @@ const mobilize = () => {
   isMobile = true;
   let startX = 0;
   let startY = 0;
-  const mobSpeedup = document.getElementById('mobSpeedup');
-  const mobShoot = document.getElementById('mobShoot');
-  document.getElementById('mute').style.display = 'none';
+  const mobSpeedup = $('mobSpeedup');
+  const mobShoot = $('mobShoot');
+  $('mute').style.display = 'none';
   mobSpeedup.style.display = 'inline';
   mobShoot.style.display = 'inline';
   mobSpeedup.ontouchstart = () => {
@@ -415,15 +431,15 @@ const mobilize = () => {
 // making compatible with mobile devices
 if (typeof window.orientation !== 'undefined') {
   if (window.orientation === 0 || window.orientation === 180)
-    document.getElementById('mob').style.display = 'inline';
+    $('mob').style.display = 'inline';
   document.onfullscreenchange = () => {
-    document.getElementById('fullScreen').hidden =
+    $('fullScreen').hidden =
       document.fullscreenEnabled || document.webkitIsFullScreen;
   };
   document.body.onwebkitfullscreenchange = document.onfullscreenchange;
-  document.getElementById('authentification').onclick = () => {
+  $('authentification').onclick = () => {
     auth();
-    document.getElementById('mob').style.display = 'none';
+    $('mob').style.display = 'none';
     mobilize();
     setTimeout(() => {
       try {
@@ -445,17 +461,17 @@ if (typeof window.orientation !== 'undefined') {
       loaded = true;
     }, 500);
   };
-  document.getElementById('overlay').children[0].style.transform = 'scale(0.5) translate(-50%, -50%)';
-  document.getElementById('overlay').children[1].style.transform = 'scale(0.5) translate(50%, -50%)';
+  $('overlay').children[0].style.transform = 'scale(0.5) translate(-50%, -50%)';
+  $('overlay').children[1].style.transform = 'scale(0.5) translate(50%, -50%)';
 }
 
 // disallow for iPhones
 if (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream) {
-  document.getElementById('about').style.backgroundColor = 'tomato';
-  document.getElementById('about').textContent = 'Sorry, this game is\nunavailable for your device';
-  document.getElementById('authentification').disabled = 'true';
+  $('about').style.backgroundColor = 'tomato';
+  $('about').textContent = 'Sorry, this game is\nunavailable for your device';
+  $('authentification').disabled = 'true';
 } else {
-  document.getElementById('about').textContent = 'left click: shoot\nright click: accelerate\nearn points and upgrade your unit\n kill players to be coolest; gl hf)';
+  $('about').textContent = 'left click: shoot\nright click: accelerate\nearn points and upgrade your unit\n kill players to be coolest; gl hf)';
 }
 
 const getPlColor = (val) => {
@@ -721,7 +737,7 @@ const processData = (data) => {
     }
   }
   if (data.points !== undefined) {
-    document.getElementById('points').children[1].textContent = data.points;
+    $('points').children[1].textContent = data.points;
     points = data.points;
     if (points >= minPrice &&
       upgradeBtn.style.animationName === '' && !upMenuFlag)
@@ -752,7 +768,7 @@ const processData = (data) => {
   }
   if (data === 'p') {
     pingStart = Date.now() - pingStart;
-    document.getElementById('ping').textContent = pingStart;
+    $('ping').textContent = pingStart;
   }
   requestAnimationFrame(() => { render(data); });
   // window.requestAnimationFrame(render);
@@ -770,7 +786,7 @@ const socketize = () => {
 
   socket.onopen = (ev) => {
     socket.send(JSON.stringify({ nickname: player.nickname }));
-    document.body.removeChild(overlay);
+    // document.body.removeChild(overlay);
     setInterval(() => {
       pingStart = Date.now();
       socket.send('"p"');
@@ -847,8 +863,8 @@ const mute = () => {
 };
 
 const updatescore = () => {
-  document.getElementById('kills').textContent = `kills: ${kills ? kills : 0}`;
-  document.getElementById('deaths').textContent = `deaths: ${deaths ? deaths : 0}`;
+  $('kills').textContent = `kills: ${kills ? kills : 0}`;
+  $('deaths').textContent = `deaths: ${deaths ? deaths : 0}`;
 };
 
 const updateHealth = (health) => {

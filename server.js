@@ -4,7 +4,7 @@
 'use strict';
 
 // linking external packages
-const testing = !1;
+const testing = 1;
 const fs = require('fs');
 const http = require('http');
 const qs = require('querystring');
